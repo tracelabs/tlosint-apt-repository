@@ -4,6 +4,11 @@
 # not be: anyone who can land a workflow change could otherwise sign packages
 # that users' systems trust. CI produces unsigned .deb artifacts; a human
 # downloads them and runs publish/publish.sh locally.
+#
+# Jobs run inside a Debian container rather than on the Ubuntu host. Ubuntu's
+# debian-archive-keyring stops at bookworm, so mmdebstrap bootstrapping trixie
+# on the host fails signature verification with NO_PUBKEY. Debian's own image
+# has the right keys by definition.
 name: build
 
 on:
@@ -19,36 +24,47 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: debian:trixie
+      # sbuild --chroot-mode=unshare creates user namespaces from inside this
+      # container. Docker's default seccomp profile is the usual thing that
+      # stops that.
+      options: --security-opt seccomp=unconfined
     steps:
-      - uses: actions/checkout@v4
-
+      # Before checkout: actions/checkout wants git, and the Debian image has
+      # neither git nor the build tooling.
       - name: Install build tooling
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            sbuild mmdebstrap uidmap lintian shellcheck python3-yaml
+          apt-get update -qq
+          apt-get install -y --no-install-recommends \
+            sbuild mmdebstrap uidmap lintian shellcheck \
+            python3-yaml make git ca-certificates
 
-      # --chroot-mode=unshare needs no root and no schroot config, so nothing
-      # here requires a privileged runner.
+      - uses: actions/checkout@v4
+
+      # sbuild refuses to run as root, and the container's default user is
+      # root. Everything after this point runs as an unprivileged builder.
+      - name: Create unprivileged builder
+        run: |
+          useradd -m -u 1001 builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+
       - name: Cache chroot
         id: chroot-cache
         uses: actions/cache@v4
         with:
-          path: ~/.cache/sbuild
+          path: /home/builder/.cache/sbuild
           key: sbuild-${{ env.DIST }}-${{ env.ARCH }}-${{ hashFiles('build/mk-chroot.sh') }}
 
       - name: Build chroot
         if: steps.chroot-cache.outputs.cache-hit != 'true'
-        run: make chroot
+        run: runuser -u builder -- make chroot
 
       - name: Build packages
-        run: make build
+        run: runuser -u builder -- make build
 
       - name: Lint
-        run: make lint
-
-      - name: Install test
-        run: make test
+        run: runuser -u builder -- make lint
 
       - name: Upload unsigned packages
         uses: actions/upload-artifact@v4
@@ -60,3 +76,24 @@ jobs:
             artifacts/*.buildinfo
           if-no-files-found: error
           retention-days: 30
+
+  # Separate job so the install test runs against a genuinely clean trixie,
+  # not the one carrying the whole build toolchain. This is also the job that
+  # would catch a missing runtime Depends that the build environment masked.
+  install-test:
+    needs: build
+    runs-on: ubuntu-latest
+    container:
+      image: debian:trixie
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: debs-${{ env.DIST }}-${{ env.ARCH }}
+          path: artifacts
+
+      # NATIVE=1: the job container is already the clean environment, and no
+      # Docker daemon is reachable from inside it.
+      - name: Install test
+        run: NATIVE=1 build/install-test.sh "$DIST"

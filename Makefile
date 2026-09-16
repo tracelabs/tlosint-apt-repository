@@ -34,6 +34,8 @@ else
 	@for p in $(PACKAGES); do build/build-package.sh "$$p" "$(DIST)" "$(ARCH)" || exit 1; done
 endif
 
+# NATIVE=1 installs into the current system instead of spinning up a
+# container -- used in CI, where the job already runs inside a clean Debian.
 test:
 	build/install-test.sh "$(DIST)"
 
