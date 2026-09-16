@@ -27,9 +27,10 @@ jobs:
     container:
       image: debian:trixie
       # sbuild --chroot-mode=unshare creates user namespaces from inside this
-      # container. Docker's default seccomp profile is the usual thing that
-      # stops that.
-      options: --security-opt seccomp=unconfined
+      # container. Docker's default seccomp profile blocks that, and on
+      # Ubuntu 24.04 hosts the default AppArmor profile plus
+      # kernel.apparmor_restrict_unprivileged_userns does too.
+      options: --security-opt seccomp=unconfined --security-opt apparmor=unconfined
     steps:
       # Before checkout: actions/checkout wants git, and the Debian image has
       # neither git nor the build tooling.
@@ -37,7 +38,7 @@ jobs:
         run: |
           apt-get update -qq
           apt-get install -y --no-install-recommends \
-            sbuild mmdebstrap uidmap lintian shellcheck \
+            sbuild mmdebstrap uidmap zstd lintian shellcheck \
             python3-yaml make git ca-certificates
 
       - uses: actions/checkout@v4
@@ -48,6 +49,11 @@ jobs:
         run: |
           useradd -m -u 1001 builder
           chown -R builder:builder "$GITHUB_WORKSPACE"
+          # newuidmap needs an allocated subordinate range. useradd does not
+          # always write one, and without it unshare mode falls back to a
+          # single-uid mapping.
+          grep -q '^builder:' /etc/subuid || echo 'builder:100000:65536' >> /etc/subuid
+          grep -q '^builder:' /etc/subgid || echo 'builder:100000:65536' >> /etc/subgid
 
       - name: Cache chroot
         id: chroot-cache
