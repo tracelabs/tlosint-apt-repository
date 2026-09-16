@@ -1,0 +1,44 @@
+# Single source of truth for the OSINT tool set.
+#
+# Generates: tlosint-meta Depends, README table, upstream drift check.
+# Never hardcode the tool list anywhere else.
+#
+# kind:
+#   distro  - already in Debian/Kali; tlosint-meta just depends on it
+#   python  - own venv under /opt/tracelabs/<name> via dh-virtualenv
+#   go      - built from source, static binary to /opt/tracelabs/<name>
+#   binary  - upstream release binary, checksum-pinned
+#
+# TODO: populate from the upstream inventory. These three are here so the
+# trivial build->publish loop can be proven before real packaging starts.
+
+- name: exiftool
+  kind: distro
+  package: libimage-exiftool-perl
+  summary: Read and write image metadata
+
+- name: tor
+  kind: distro
+  package: tor
+  summary: Anonymising overlay network
+
+- name: httrack
+  kind: distro
+  package: httrack
+  summary: Website mirroring utility
+
+# --- not yet packaged; uncomment as each is done -------------------------
+#
+# - name: sherlock
+#   kind: python
+#   source: https://github.com/sherlock-project/sherlock
+#   version: 0.15.0
+#   entrypoints: [sherlock]
+#   summary: Hunt down social media accounts by username
+#
+# - name: phoneinfoga
+#   kind: binary
+#   source: https://github.com/sundowndev/phoneinfoga
+#   version: 2.11.0
+#   sha256: TODO
+#   summary: Information gathering for phone numbers

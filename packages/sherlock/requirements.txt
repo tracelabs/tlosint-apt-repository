@@ -1,0 +1,9 @@
+# GENERATED -- do not edit by hand.
+#
+#   pip-compile --generate-hashes --output-file=requirements.txt requirements.in
+#
+# --require-hashes is not optional. Without it the build silently depends on
+# whatever PyPI served that afternoon, which is the thing we are moving away
+# from.
+#
+# TODO: generate for sherlock 0.15.0

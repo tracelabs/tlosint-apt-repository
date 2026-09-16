@@ -1,0 +1,17 @@
+Source: tlosint-meta
+Section: metapackages
+Priority: optional
+Maintainer: Trace Labs <jeff.g@tracelabs.org>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://github.com/tracelabs/tlosint-vm
+
+Package: tlosint-meta
+Architecture: all
+Depends: ${misc:Depends},
+@GENERATED_DEPENDS@
+Description: Trace Labs OSINT toolset (metapackage)
+ Installs the curated OSINT tool set used by the Trace Labs OSINT
+ distribution. This package contains no files; it only depends on the
+ tools themselves.

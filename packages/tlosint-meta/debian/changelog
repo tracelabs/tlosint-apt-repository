@@ -1,0 +1,6 @@
+tlosint-meta (2026.09) stable; urgency=medium
+
+  * Initial release. Metapackage over the curated OSINT tool set,
+    generated from tools.yaml.
+
+ -- Trace Labs <jeff.g@tracelabs.org>  Tue, 16 Sep 2026 00:00:00 +0000

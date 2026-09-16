@@ -1,0 +1,62 @@
+# Build, lint and install-test every package.
+#
+# This workflow NEVER signs. The signing key is not in Actions secrets and must
+# not be: anyone who can land a workflow change could otherwise sign packages
+# that users' systems trust. CI produces unsigned .deb artifacts; a human
+# downloads them and runs publish/publish.sh locally.
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  DIST: trixie
+  ARCH: amd64
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tooling
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            sbuild mmdebstrap uidmap lintian shellcheck python3-yaml
+
+      # --chroot-mode=unshare needs no root and no schroot config, so nothing
+      # here requires a privileged runner.
+      - name: Cache chroot
+        id: chroot-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/sbuild
+          key: sbuild-${{ env.DIST }}-${{ env.ARCH }}-${{ hashFiles('build/mk-chroot.sh') }}
+
+      - name: Build chroot
+        if: steps.chroot-cache.outputs.cache-hit != 'true'
+        run: make chroot
+
+      - name: Build packages
+        run: make build
+
+      - name: Lint
+        run: make lint
+
+      - name: Install test
+        run: make test
+
+      - name: Upload unsigned packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: debs-${{ env.DIST }}-${{ env.ARCH }}
+          path: |
+            artifacts/*.deb
+            artifacts/*.changes
+            artifacts/*.buildinfo
+          if-no-files-found: error
+          retention-days: 30

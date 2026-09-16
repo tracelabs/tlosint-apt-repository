@@ -1,0 +1,27 @@
+{
+  "policies": {
+    "DisableTelemetry": true,
+    "DisableFirefoxStudies": true,
+    "DisablePocket": true,
+    "EnableTrackingProtection": {
+      "Value": true,
+      "Locked": true,
+      "Cryptomining": true,
+      "Fingerprinting": true
+    },
+    "SanitizeOnShutdown": {
+      "Cache": true,
+      "Cookies": true,
+      "History": true,
+      "Sessions": true,
+      "SiteSettings": true
+    },
+    "Permissions": {
+      "Camera":       { "BlockNewRequests": true, "Locked": true },
+      "Microphone":   { "BlockNewRequests": true, "Locked": true },
+      "Location":     { "BlockNewRequests": true, "Locked": true },
+      "Notifications": { "BlockNewRequests": true, "Locked": true }
+    },
+    "_comment": "TODO: port OSINT bookmark set from upstream overlays/ into Bookmarks[]"
+  }
+}

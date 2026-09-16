@@ -1,0 +1,16 @@
+Source: tlosint-config
+Section: misc
+Priority: optional
+Maintainer: Trace Labs <jeff.g@tracelabs.org>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+
+Package: tlosint-config
+Architecture: all
+Depends: ${misc:Depends}
+Description: Trace Labs OSINT configuration and hardening
+ Firefox hardening policy, OSINT bookmarks, desktop theming and shell
+ configuration for the Trace Labs OSINT environment.
+ .
+ Replaces the configuration half of upstream's tlosint-tools.sh.

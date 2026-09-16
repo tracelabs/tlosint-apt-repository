@@ -1,0 +1,20 @@
+# Build output. Never commit binaries to main -- the published tree lives
+# only on gh-pages as a single orphan commit.
+artifacts/
+*.deb
+*.buildinfo
+*.changes
+
+# Generated from tools.yaml by scripts/gen-meta-control.py
+/packages/tlosint-meta/debian/control
+
+# Debian build droppings
+packages/*/debian/files
+packages/*/debian/.debhelper/
+packages/*/debian/debhelper-build-stamp
+packages/*/debian/tlosint-*/
+packages/*/debian/*.substvars
+packages/*/debian/*.log
+
+.DS_Store
+handoff.md

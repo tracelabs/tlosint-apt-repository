@@ -1,0 +1,12 @@
+#!/usr/bin/make -f
+%:
+	dh $@
+
+override_dh_auto_install:
+	# Firefox enterprise policy -- declarative, not a shell script poking prefs.
+	install -D -m 0644 files/firefox/policies.json \
+	    debian/tlosint-config/etc/firefox/policies/policies.json
+	# TODO: bookmarks, xfce theming, /etc/skel content ported from
+	# upstream overlays/. Note: anything under /home is discarded in a
+	# Qubes template, so user-visible content must ship in /etc/skel
+	# or /opt and be seeded on first run.
