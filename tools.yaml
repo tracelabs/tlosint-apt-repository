@@ -1,44 +1,261 @@
 # Single source of truth for the OSINT tool set.
 #
-# Generates: tlosint-meta Depends, README table, upstream drift check.
+# Generates: tlosint-meta Depends, README table.
 # Never hardcode the tool list anywhere else.
 #
+# Inventoried 2026-09-16 against tracelabs/tlosint-vm branch u/191-socmint-tools,
+# scripts/tlosint-tools.sh. Availability checked against Debian 13 (trixie).
+#
 # kind:
-#   distro  - already in Debian/Kali; tlosint-meta just depends on it
+#   distro  - already in Debian; tlosint-meta just depends on it
 #   python  - own venv under /opt/tracelabs/<name> via dh-virtualenv
 #   go      - built from source, static binary to /opt/tracelabs/<name>
+#   rust    - cargo build; see handoff section 6, no template exists yet
 #   binary  - upstream release binary, checksum-pinned
+#   docker  - upstream ships only a container image; see handoff section 6
 #
-# TODO: populate from the upstream inventory. These three are here so the
-# trivial build->publish loop can be proven before real packaging starts.
+# status:
+#   ready   - packaged (or in Debian) and safe to pull into tlosint-meta
+#   planned - inventoried, not yet packaged. NOT in Depends.
+#   gated   - deliberately excluded from the default set; opt-in only
+#
+# Only status:ready entries become tlosint-meta dependencies.
+
+# =============================================================================
+# In Debian trixie already. Zero packaging work -- just depend on them.
+# =============================================================================
 
 - name: exiftool
   kind: distro
+  status: ready
   package: libimage-exiftool-perl
   summary: Read and write image metadata
 
 - name: tor
   kind: distro
+  status: ready
   package: tor
   summary: Anonymising overlay network
 
 - name: httrack
   kind: distro
+  status: ready
   package: httrack
   summary: Website mirroring utility
 
-# --- not yet packaged; uncomment as each is done -------------------------
-#
-# - name: sherlock
-#   kind: python
-#   source: https://github.com/sherlock-project/sherlock
-#   version: 0.15.0
-#   entrypoints: [sherlock]
-#   summary: Hunt down social media accounts by username
-#
-# - name: phoneinfoga
-#   kind: binary
-#   source: https://github.com/sundowndev/phoneinfoga
-#   version: 2.11.0
-#   sha256: TODO
-#   summary: Information gathering for phone numbers
+- name: shodan
+  kind: distro
+  status: ready
+  package: python3-shodan        # ships /usr/bin/shodan
+  summary: Shodan CLI and API client
+
+- name: sublist3r
+  kind: distro
+  status: ready
+  package: sublist3r
+  summary: Subdomain enumeration
+
+- name: instaloader
+  kind: distro
+  status: ready
+  package: instaloader
+  summary: Download Instagram media and metadata
+
+- name: internetarchive
+  kind: distro
+  status: ready
+  package: internetarchive       # ships /usr/bin/ia
+  summary: Internet Archive command line client
+
+- name: yt-dlp
+  kind: distro
+  status: ready
+  package: yt-dlp
+  summary: Video downloader for archiving sources
+
+- name: gallery-dl
+  kind: distro
+  status: ready
+  package: gallery-dl
+  summary: Image gallery downloader
+
+- name: streamlink
+  kind: distro
+  status: ready
+  package: streamlink
+  summary: Extract streams from live services
+
+- name: mat2
+  kind: distro
+  status: ready
+  package: mat2
+  summary: Metadata anonymisation toolkit
+
+- name: ffmpeg
+  kind: distro
+  status: ready
+  package: ffmpeg
+  summary: Media transcoding, required by yt-dlp merging
+
+- name: tesseract
+  kind: distro
+  status: ready
+  package: [tesseract-ocr, tesseract-ocr-eng]
+  summary: OCR engine and English language data
+
+- name: steghide
+  kind: distro
+  status: ready
+  package: steghide
+  summary: Steganography detection and extraction
+
+- name: stegseek
+  kind: distro
+  status: ready
+  package: stegseek
+  summary: Fast steghide cracker
+
+- name: stegosuite
+  kind: distro
+  status: ready
+  package: stegosuite
+  summary: Graphical steganography tool
+
+# =============================================================================
+# Not in trixie. Need real packaging -- these are the actual work.
+# =============================================================================
+
+- name: phoneinfoga
+  kind: go
+  status: planned
+  source: https://github.com/sundowndev/phoneinfoga
+  summary: Information gathering for phone numbers
+
+- name: gowitness
+  kind: go
+  status: planned
+  source: https://github.com/sensepost/gowitness
+  summary: Web screenshot utility
+
+- name: maigret
+  kind: python
+  status: planned
+  source: https://github.com/soxoj/maigret
+  summary: Collect a dossier on a person by username
+
+- name: ghunt
+  kind: python
+  status: planned
+  source: https://github.com/mxrch/GHunt
+  summary: Google account OSINT
+  notes: >
+    Requires an interactive browser login. Upstream's script defers it with a
+    marker file; packaging must not assume a login exists at install time.
+
+- name: whatsmyname
+  kind: python
+  status: planned
+  source: https://github.com/C3n7ral051nt4g3ncy/WhatsMyName-Python
+  summary: Username enumeration across sites
+
+- name: carbon14
+  kind: python
+  status: planned
+  source: https://github.com/Lazza/Carbon14
+  summary: OSINT dating of web content
+
+- name: spiderfoot
+  kind: python
+  status: planned
+  source: https://github.com/smicallef/spiderfoot
+  summary: Automated OSINT reconnaissance
+  notes: >
+    Upstream pins lxml<5, which fails to compile on Python 3.13 (trixie).
+    Upstream's script relaxes the pin at install time; the package must pin a
+    working set with hashes instead.
+
+- name: metagoofil
+  kind: python
+  status: planned
+  source: https://github.com/opsdisk/metagoofil
+  summary: Extract metadata from public documents
+  notes: >
+    Ships neither setup.py nor pyproject.toml, so pip/pipx cannot install it.
+    Needs a hand-written entry point in the venv.
+
+- name: sn0int
+  kind: rust
+  status: planned
+  source: https://github.com/kpcyrd/sn0int
+  summary: Semi-automatic OSINT framework and package manager
+  notes: >
+    Upstream installs this from apt.vulns.xyz, whose key lands in
+    /etc/apt/trusted.gpg.d -- a trust root for every repo on the system.
+    Replacing that is a reason this repository exists.
+
+- name: monolith
+  kind: rust
+  status: planned
+  source: https://github.com/Y2Z/monolith
+  summary: Save a web page as a single self-contained HTML file
+
+- name: translate-shell
+  kind: binary
+  status: planned
+  source: https://github.com/soimort/translate-shell
+  summary: Command line translator
+  notes: Was in Debian, not in trixie. Single POSIX shell script.
+
+- name: torbrowser-launcher
+  kind: binary
+  status: planned
+  source: https://github.com/micahflee/torbrowser-launcher
+  summary: Tor Browser downloader and launcher
+  notes: >
+    Not in trixie. Downloads Tor Browser at runtime, which a Qubes template
+    build cannot do -- see handoff section 6.
+
+# =============================================================================
+# Docker-image tools. These do not fit a package list at all -- see handoff
+# section 6 before assuming they can ship.
+# =============================================================================
+
+- name: owlculus
+  kind: docker
+  status: planned
+  source: https://github.com/be0vlk/owlculus
+  summary: OSINT case management platform
+
+- name: auto-archiver
+  kind: docker
+  status: planned
+  source: https://github.com/bellingcat/auto-archiver
+  summary: Automated archiving of web resources
+
+# =============================================================================
+# Deliberately excluded from the default set.
+# =============================================================================
+
+- name: archivebox
+  kind: python
+  status: gated
+  source: https://github.com/ArchiveBox/ArchiveBox
+  summary: Self-hosted web archiving
+  notes: >
+    Upstream gates this behind TLOSINT_INSTALL_ARCHIVEBOX=1 on VM image size.
+    Same reasoning applies to a template; keep it opt-in.
+
+- name: twscrape
+  kind: python
+  status: gated
+  source: https://github.com/vladkens/twscrape
+  summary: Twitter/X scraping
+  notes: >
+    Upstream gates this behind TLOSINT_ENABLE_TWSCRAPE=1 pending a Trace Labs
+    ToS review (docs/TOOLING_POLICY.md). Do not ship by default.
+
+# =============================================================================
+# Browsers and desktop bits live in tlosint-config, not here -- they are
+# environment, not tools. brave-browser needs a third-party apt repo and is
+# an open question (handoff section 6).
+# =============================================================================

@@ -19,14 +19,34 @@ except ImportError:
 BINARY_PREFIX = "tlosint-"
 
 
-def depends_for(tool: dict) -> str | None:
+KINDS = {"distro", "python", "go", "rust", "binary", "docker"}
+STATUSES = {"ready", "planned", "gated"}
+
+
+def depends_for(tool: dict) -> list[str]:
+    """Debian dependencies contributed by one tool.
+
+    Only status:ready tools contribute. Everything else is inventory: it is
+    tracked in tools.yaml so the manifest stays the single source of truth,
+    but it must not land in Depends or tlosint-meta becomes uninstallable.
+    """
+    name = tool["name"]
     kind = tool.get("kind")
+    status = tool.get("status", "ready")
+
+    if kind not in KINDS:
+        print(f"warning: unknown kind {kind!r} for {name}", file=sys.stderr)
+        return []
+    if status not in STATUSES:
+        print(f"warning: unknown status {status!r} for {name}", file=sys.stderr)
+        return []
+    if status != "ready":
+        return []
+
     if kind == "distro":
-        return tool.get("package") or tool["name"]
-    if kind in ("python", "go", "binary"):
-        return f"{BINARY_PREFIX}{tool['name']}"
-    print(f"warning: unknown kind {kind!r} for {tool['name']}", file=sys.stderr)
-    return None
+        pkg = tool.get("package") or name
+        return [pkg] if isinstance(pkg, str) else list(pkg)
+    return [f"{BINARY_PREFIX}{name}"]
 
 
 def main() -> int | str:
@@ -39,9 +59,16 @@ def main() -> int | str:
     with open(args.tools) as fh:
         tools = yaml.safe_load(fh) or []
 
-    deps = sorted(filter(None, (depends_for(t) for t in tools)))
+    deps = sorted({d for t in tools for d in depends_for(t)})
     if not deps:
         return "no dependencies generated; is tools.yaml populated?"
+
+    by_status: dict[str, int] = {}
+    for t in tools:
+        by_status[t.get("status", "ready")] = by_status.get(t.get("status", "ready"), 0) + 1
+    skipped = ", ".join(f"{n} {s}" for s, n in sorted(by_status.items()) if s != "ready")
+    if skipped:
+        print(f"note: not in Depends -- {skipped}", file=sys.stderr)
 
     block = ",\n".join(f"         {d}" for d in deps)
 

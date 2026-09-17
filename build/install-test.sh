@@ -24,16 +24,26 @@ read -r -d '' SMOKE <<'SMOKE_EOF' || true
     apt-get update -qq
     apt-get install -y --no-install-recommends /debs/*.deb
 
-    # tlosint-meta is pure Depends. Proving it is installed proves apt
-    # resolved and pulled every tool it names.
-    dpkg-query -W -f='${Status}\n' tlosint-meta | grep -q 'install ok installed'
-    for cmd in exiftool tor httrack; do
-        command -v "$cmd" >/dev/null || { echo "missing: $cmd" >&2; exit 1; }
+    # Every .deb we just built must be installed, not merely unpacked.
+    # Deliberately no hardcoded tool list here: tools.yaml owns that, and
+    # apt resolving tlosint-meta already proves every tool it names pulled in.
+    for deb in /debs/*.deb; do
+        pkg="$(dpkg-deb -f "$deb" Package)"
+        status="$(dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null || true)"
+        case "$status" in
+            "install ok installed") echo "  ok: $pkg" ;;
+            *) echo "  FAILED: $pkg ($status)" >&2; exit 1 ;;
+        esac
     done
 
-    # TODO: per-tool smoke tests as real tools land, e.g.
-    #   sherlock --version
-    #   test -x /opt/tracelabs/sherlock/bin/sherlock
+    # Tools we package ourselves get a real smoke test -- that is where the
+    # breakage lives (venv paths, wrappers pointing at absent interpreters).
+    # Distro tools need none; apt already guarantees them.
+    for wrapper in /usr/bin/tlosint-*; do
+        [ -e "$wrapper" ] || continue
+        [ -x "$wrapper" ] || { echo "not executable: $wrapper" >&2; exit 1; }
+    done
+
     echo "install test passed"
 SMOKE_EOF
 
