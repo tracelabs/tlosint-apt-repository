@@ -31,19 +31,6 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             sbuild mmdebstrap uidmap zstd lintian shellcheck python3-yaml
 
-      # Ubuntu's debian-archive-keyring only goes up to bookworm, so
-      # mmdebstrap bootstrapping trixie here fails with NO_PUBKEY. Lift the
-      # keys out of Debian's own image rather than pinning a keyring .deb by
-      # hash: the image is fetched by digest over TLS and never 404s the way a
-      # pinned pool URL does when the package is superseded.
-      - name: Extract Debian archive keyring
-        run: |
-          docker run --rm debian:${DIST} \
-            cat /usr/share/keyrings/debian-archive-keyring.gpg \
-            > "${RUNNER_TEMP}/debian-archive-keyring.gpg"
-          test -s "${RUNNER_TEMP}/debian-archive-keyring.gpg"
-          echo "KEYRING=${RUNNER_TEMP}/debian-archive-keyring.gpg" >> "$GITHUB_ENV"
-
       - name: Cache chroot
         id: chroot-cache
         uses: actions/cache@v4

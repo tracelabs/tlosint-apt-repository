@@ -33,15 +33,49 @@ fi
 # container format and the compressor from the output extension. A bare .tmp
 # suffix makes it silently choose "directory" format instead.
 TMP="$(dirname "$OUT")/.tmp-$(basename "$OUT")"
-trap 'rm -rf "$TMP"' EXIT
 
-# Ubuntu's debian-archive-keyring stops at bookworm, so bootstrapping trixie
-# from an Ubuntu host fails with NO_PUBKEY unless we supply Debian's keys.
-# KEYRING is set by CI; unset on a Debian host, where apt already has them.
+# World-readable staging dir for the keyring -- see the chmod note below.
+STAGE="$(mktemp -d)"
+chmod 0755 "$STAGE"
+trap 'rm -rf "$TMP" "$STAGE"' EXIT
+
+# Debian's archive keys. Ubuntu's debian-archive-keyring stops at bookworm, so
+# bootstrapping trixie from an Ubuntu host fails with NO_PUBKEY. On a Debian
+# host apt already has them; anywhere else we must supply them.
+#
+# Self-contained rather than relying on CI to export KEYRING: a silently-empty
+# variable reintroduces the exact NO_PUBKEY failure this exists to prevent, and
+# looks identical to having no fix at all.
+HOST_ID="$(. /etc/os-release 2>/dev/null && echo "${ID:-unknown}")"
 KEYRING_ARGS=()
-if [[ -n "${KEYRING:-}" ]]; then
-    [[ -f "$KEYRING" ]] || { echo "KEYRING set but missing: $KEYRING" >&2; exit 1; }
-    KEYRING_ARGS=(--keyring="$KEYRING")
+KEYRING_SRC="${KEYRING:-}"
+
+if [[ -z "$KEYRING_SRC" && "$HOST_ID" != "debian" ]]; then
+    # Lift the keys out of Debian's own image. Preferred over pinning a keyring
+    # .deb by hash: Debian's pool drops superseded versions, so a pinned URL
+    # 404s on its own schedule.
+    command -v docker >/dev/null || {
+        echo "host is '$HOST_ID', not debian, and has no docker to source" >&2
+        echo "Debian's archive keys from. Either run on Debian, or set" >&2
+        echo "KEYRING=/path/to/debian-archive-keyring.gpg" >&2
+        exit 1
+    }
+    echo "host is '$HOST_ID'; extracting Debian archive keyring from debian:${DIST}"
+    KEYRING_SRC="${STAGE}/extracted.gpg"
+    docker run --rm "debian:${DIST}" \
+        cat /usr/share/keyrings/debian-archive-keyring.gpg > "$KEYRING_SRC"
+fi
+
+if [[ -n "$KEYRING_SRC" ]]; then
+    [[ -s "$KEYRING_SRC" ]] || { echo "keyring missing or empty: $KEYRING_SRC" >&2; exit 1; }
+    # Stage into a world-readable location. apt drops privileges to the _apt
+    # user to verify signatures, so a keyring under a 0700 home (the default
+    # for root, and for some CI users) is unreadable to it -- and apt does not
+    # report a permission error. It silently proceeds with no keys and fails
+    # with NO_PUBKEY, which looks exactly like not passing --keyring at all.
+    cp "$KEYRING_SRC" "${STAGE}/debian-archive-keyring.gpg"
+    chmod 0644 "${STAGE}/debian-archive-keyring.gpg"
+    KEYRING_ARGS=(--keyring="${STAGE}/debian-archive-keyring.gpg")
 fi
 
 mmdebstrap --variant=buildd --arch="$ARCH" \
