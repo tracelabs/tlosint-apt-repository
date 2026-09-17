@@ -46,6 +46,7 @@ trap 'rm -rf "$TMP" "$STAGE"' EXIT
 # Self-contained rather than relying on CI to export KEYRING: a silently-empty
 # variable reintroduces the exact NO_PUBKEY failure this exists to prevent, and
 # looks identical to having no fix at all.
+# shellcheck disable=SC1091  # /etc/os-release is a runtime file, not a source input
 HOST_ID="$(. /etc/os-release 2>/dev/null && echo "${ID:-unknown}")"
 KEYRING_ARGS=()
 KEYRING_SRC="${KEYRING:-}"

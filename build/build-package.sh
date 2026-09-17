@@ -23,6 +23,19 @@ if [[ -f "$SRC/debian/NOT-READY" ]]; then
     echo "skipping $PKG (debian/NOT-READY present)"
     exit 0
 fi
+
+# dpkg executes debian/rules as a program, and dpkg-source runs maintainer
+# scripts the same way. A non-executable one surfaces from deep inside fakeroot
+# as "debian/rules: Permission denied", which does not name the real problem.
+# The bit has to be committed, not fixed at build time, or it works in CI and
+# breaks for everyone cloning fresh.
+for f in "$SRC"/debian/rules "$SRC"/debian/{pre,post}{inst,rm}; do
+    [[ -f "$f" ]] || continue
+    [[ -x "$f" ]] && continue
+    echo "not executable: ${f#"$ROOT"/}" >&2
+    echo "  fix with:  chmod +x '${f#"$ROOT"/}' && git update-index --chmod=+x '${f#"$ROOT"/}'" >&2
+    exit 1
+done
 [[ -f "$CHROOT"     ]] || { echo "no chroot; run: make chroot" >&2; exit 1; }
 
 mkdir -p "$ARTIFACTS"
