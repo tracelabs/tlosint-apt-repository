@@ -1,0 +1,53 @@
+#!/usr/bin/make -f
+#
+# One venv per tool. maigret pins aiohttp, lxml and curl-cffi tightly enough
+# that sharing an interpreter with the other OSINT tools would break one of
+# them -- which is precisely why the upstream pipx-per-tool script exists.
+
+export DH_VIRTUALENV_INSTALL_ROOT=/opt/tracelabs
+
+%:
+	dh $@ --with python-virtualenv
+
+# --install-suffix makes the venv /opt/tracelabs/maigret rather than
+# /opt/tracelabs/tlosint-maigret, matching the convention in handoff section 8.
+#
+# --skip-install: this source package is packaging only. maigret itself is a
+# pinned entry in requirements.txt, so there is no setup.py here for pip to
+# install from the source directory.
+#
+# Hash enforcement is declared inside requirements.txt (a --require-hashes
+# line) rather than passed here: --extra-pip-arg would also apply it to the
+# venv bootstrap of pip/setuptools/wheel, which carry no hashes.
+override_dh_virtualenv:
+	dh_virtualenv \
+	    --install-suffix maigret \
+	    --skip-install \
+	    --python /usr/bin/python3 \
+	    --no-test \
+	    --preinstall pip \
+	    --preinstall setuptools \
+	    --preinstall wheel \
+	    --requirements requirements.txt
+
+# The venv contains prebuilt manylinux wheels -- third-party binaries we did
+# not compile. Debian's binary-mangling helpers must not touch them:
+#   dh_dwz       fails outright on their debug info (or absence of it)
+#   dh_strip     would rewrite vendored .so files we do not own
+#   dh_shlibdeps would derive Depends from bundled libs (pillow.libs et al)
+#                that are already inside the package
+override_dh_dwz:
+
+override_dh_strip:
+	dh_strip --exclude=/opt/tracelabs
+
+override_dh_shlibdeps:
+	dh_shlibdeps -X/opt/tracelabs
+
+# Expose the entry point on PATH. dh_virtualenv rewrites the shebang inside
+# the venv, so this is a plain symlink rather than a wrapper script.
+override_dh_link:
+	dh_link
+	mkdir -p debian/tlosint-maigret/usr/bin
+	ln -sf /opt/tracelabs/maigret/bin/maigret \
+	    debian/tlosint-maigret/usr/bin/maigret

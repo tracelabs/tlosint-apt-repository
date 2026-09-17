@@ -1,6 +1,0 @@
-Skeleton only -- not yet buildable.
-
-requirements.txt has no hash-pinned content, so dh_virtualenv's
---require-hashes install would fail. build/build-package.sh skips any package
-with this marker; delete it when sherlock is genuinely packaged (handoff step 4)
-and resolve the source-format question in handoff section 6 at the same time.

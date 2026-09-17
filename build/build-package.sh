@@ -44,8 +44,25 @@ mkdir -p "$ARTIFACTS"
 # the source tree here before building. Must be hash-pinned -- see
 # requirements.txt generated with `pip-compile --generate-hashes`.
 
+# Packages that install from a language ecosystem at build time (dh_virtualenv
+# reaching PyPI, and later cargo/go) cannot build in sbuild's default offline
+# chroot. Opt in per package rather than globally, so packages that genuinely
+# build offline keep the stronger guarantee.
+NETWORK_ARGS=()
+if [[ -f "$SRC/debian/NEEDS-NETWORK" ]]; then
+    echo "note: $PKG builds with network enabled (debian/NEEDS-NETWORK)"
+    NETWORK_ARGS=(--enable-network)
+fi
+
 cd "$SRC"
+# --no-clean-source: sbuild otherwise runs "debian/rules clean" on the HOST
+# before entering the chroot, which drags every package's build tooling onto
+# the host -- dh-virtualenv for python tools, and cargo/go for the kinds still
+# to come. The chroot is where build tooling belongs. CI checkouts are clean by
+# construction; locally, "make clean" covers it.
 sbuild \
+    "${NETWORK_ARGS[@]}" \
+    --no-clean-source \
     --chroot-mode=unshare \
     --chroot="$CHROOT" \
     --dist="$DIST" \
