@@ -49,6 +49,12 @@
   package: python3-shodan        # ships /usr/bin/shodan
   summary: Shodan CLI and API client
 
+- name: sherlock
+  kind: distro
+  status: ready
+  package: sherlock              # trixie 0.15.0-1, the sherlock-project tool
+  summary: Hunt down social media accounts by username
+
 - name: sublist3r
   kind: distro
   status: ready
@@ -139,7 +145,8 @@
 
 - name: maigret
   kind: python
-  status: planned
+  status: ready
+  version: 0.6.5
   source: https://github.com/soxoj/maigret
   summary: Collect a dossier on a person by username
 
