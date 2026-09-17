@@ -4,11 +4,6 @@
 # not be: anyone who can land a workflow change could otherwise sign packages
 # that users' systems trust. CI produces unsigned .deb artifacts; a human
 # downloads them and runs publish/publish.sh locally.
-#
-# Jobs run inside a Debian container rather than on the Ubuntu host. Ubuntu's
-# debian-archive-keyring stops at bookworm, so mmdebstrap bootstrapping trixie
-# on the host fails signature verification with NO_PUBKEY. Debian's own image
-# has the right keys by definition.
 name: build
 
 on:
@@ -23,54 +18,53 @@ env:
 
 jobs:
   build:
+    # Runs directly on the host, NOT in a job container. sbuild's unshare mode
+    # needs to map a subordinate uid range, and newuidmap cannot write uid_map
+    # from inside an Actions job container. On the bare runner it works.
     runs-on: ubuntu-latest
-    container:
-      image: debian:trixie
-      # sbuild --chroot-mode=unshare creates user namespaces from inside this
-      # container. Docker's default seccomp profile blocks that, and on
-      # Ubuntu 24.04 hosts the default AppArmor profile plus
-      # kernel.apparmor_restrict_unprivileged_userns does too.
-      options: --security-opt seccomp=unconfined --security-opt apparmor=unconfined
     steps:
-      # Before checkout: actions/checkout wants git, and the Debian image has
-      # neither git nor the build tooling.
-      - name: Install build tooling
-        run: |
-          apt-get update -qq
-          apt-get install -y --no-install-recommends \
-            sbuild mmdebstrap uidmap zstd lintian shellcheck \
-            python3-yaml make git ca-certificates
-
       - uses: actions/checkout@v4
 
-      # sbuild refuses to run as root, and the container's default user is
-      # root. Everything after this point runs as an unprivileged builder.
-      - name: Create unprivileged builder
+      - name: Install build tooling
         run: |
-          useradd -m -u 1001 builder
-          chown -R builder:builder "$GITHUB_WORKSPACE"
-          # newuidmap needs an allocated subordinate range. useradd does not
-          # always write one, and without it unshare mode falls back to a
-          # single-uid mapping.
-          grep -q '^builder:' /etc/subuid || echo 'builder:100000:65536' >> /etc/subuid
-          grep -q '^builder:' /etc/subgid || echo 'builder:100000:65536' >> /etc/subgid
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            sbuild mmdebstrap uidmap zstd lintian shellcheck python3-yaml
+
+      # Ubuntu's debian-archive-keyring only goes up to bookworm, so
+      # mmdebstrap bootstrapping trixie here fails with NO_PUBKEY. Lift the
+      # keys out of Debian's own image rather than pinning a keyring .deb by
+      # hash: the image is fetched by digest over TLS and never 404s the way a
+      # pinned pool URL does when the package is superseded.
+      - name: Extract Debian archive keyring
+        run: |
+          docker run --rm debian:${DIST} \
+            cat /usr/share/keyrings/debian-archive-keyring.gpg \
+            > "${RUNNER_TEMP}/debian-archive-keyring.gpg"
+          test -s "${RUNNER_TEMP}/debian-archive-keyring.gpg"
+          echo "KEYRING=${RUNNER_TEMP}/debian-archive-keyring.gpg" >> "$GITHUB_ENV"
 
       - name: Cache chroot
         id: chroot-cache
         uses: actions/cache@v4
         with:
-          path: /home/builder/.cache/sbuild
+          path: ~/.cache/sbuild
           key: sbuild-${{ env.DIST }}-${{ env.ARCH }}-${{ hashFiles('build/mk-chroot.sh') }}
 
       - name: Build chroot
         if: steps.chroot-cache.outputs.cache-hit != 'true'
-        run: runuser -u builder -- make chroot
+        run: make chroot
 
       - name: Build packages
-        run: runuser -u builder -- make build
+        run: make build
 
       - name: Lint
-        run: runuser -u builder -- make lint
+        run: make lint
+
+      # Uses the docker path: a fresh debian:trixie-slim, so a runtime Depends
+      # that the build host happened to satisfy still gets caught.
+      - name: Install test
+        run: make test
 
       - name: Upload unsigned packages
         uses: actions/upload-artifact@v4
@@ -82,24 +76,3 @@ jobs:
             artifacts/*.buildinfo
           if-no-files-found: error
           retention-days: 30
-
-  # Separate job so the install test runs against a genuinely clean trixie,
-  # not the one carrying the whole build toolchain. This is also the job that
-  # would catch a missing runtime Depends that the build environment masked.
-  install-test:
-    needs: build
-    runs-on: ubuntu-latest
-    container:
-      image: debian:trixie
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: debs-${{ env.DIST }}-${{ env.ARCH }}
-          path: artifacts
-
-      # NATIVE=1: the job container is already the clean environment, and no
-      # Docker daemon is reachable from inside it.
-      - name: Install test
-        run: NATIVE=1 build/install-test.sh "$DIST"
