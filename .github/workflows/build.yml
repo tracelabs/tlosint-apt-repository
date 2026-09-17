@@ -29,7 +29,19 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends \
-            sbuild mmdebstrap uidmap zstd lintian shellcheck python3-yaml
+            sbuild mmdebstrap uidmap zstd lintian shellcheck python3-yaml \
+            debhelper dpkg-dev
+
+      # sbuild's unshare mode maps a subordinate uid/gid range for the build
+      # user. Without an /etc/subuid entry it fails at create-session with
+      # "invalid idmap", which reads like a chroot problem rather than a
+      # missing account range.
+      - name: Ensure subordinate uid/gid ranges
+        run: |
+          U="$(id -un)"
+          grep -q "^${U}:" /etc/subuid || echo "${U}:100000:65536" | sudo tee -a /etc/subuid
+          grep -q "^${U}:" /etc/subgid || echo "${U}:100000:65536" | sudo tee -a /etc/subgid
+          echo "subuid: $(grep "^${U}:" /etc/subuid)"
 
       - name: Cache chroot
         id: chroot-cache
