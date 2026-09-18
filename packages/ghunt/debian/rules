@@ -1,0 +1,47 @@
+#!/usr/bin/make -f
+#
+# One venv per tool. ghunt pins pillow<11 and protobuf<6; maigret's lock
+# resolves pillow 12. The two cannot share an interpreter -- this is the
+# concrete case the venv-per-tool decision exists for.
+
+export DH_VIRTUALENV_INSTALL_ROOT=/opt/tracelabs
+
+%:
+	dh $@ --with python-virtualenv
+
+# See handoff section 7 for why each of these flags is here. In short:
+#   --install-suffix  otherwise the venv lands in /opt/tracelabs/tlosint-ghunt
+#   --skip-install    this source package is packaging only; ghunt itself is a
+#                     pinned entry in requirements.txt, so there is no setup.py
+# Hash enforcement lives inside requirements.txt, not in --extra-pip-arg,
+# which would also be applied to the unpinned pip/setuptools/wheel bootstrap.
+override_dh_virtualenv:
+	dh_virtualenv \
+	    --install-suffix ghunt \
+	    --skip-install \
+	    --python /usr/bin/python3 \
+	    --preinstall pip \
+	    --preinstall setuptools \
+	    --preinstall wheel \
+	    --requirements requirements.txt
+
+# The venv contains prebuilt manylinux wheels -- third-party binaries we did
+# not compile. Debian's binary-mangling helpers must not touch them:
+#   dh_dwz       fails outright on their debug info (or absence of it)
+#   dh_strip     would rewrite vendored .so files we do not own
+#   dh_shlibdeps would derive Depends from bundled libs already in the package
+override_dh_dwz:
+
+override_dh_strip:
+	dh_strip --exclude=/opt/tracelabs
+
+override_dh_shlibdeps:
+	dh_shlibdeps -X/opt/tracelabs
+
+# Expose the entry point on PATH. dh_virtualenv rewrites the shebang inside
+# the venv, so this is a plain symlink rather than a wrapper script.
+override_dh_link:
+	dh_link
+	mkdir -p debian/tlosint-ghunt/usr/bin
+	ln -sf /opt/tracelabs/ghunt/bin/ghunt \
+	    debian/tlosint-ghunt/usr/bin/ghunt

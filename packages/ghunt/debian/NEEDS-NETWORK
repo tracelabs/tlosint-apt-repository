@@ -1,0 +1,17 @@
+dh_virtualenv installs from PyPI during the build, so this package cannot be
+built in sbuild's default offline chroot. build/build-package.sh passes
+--enable-network when this marker is present.
+
+This is a deliberate, narrow exception to Debian's "builds must be offline"
+rule, and it is per-package rather than global so that tlosint-meta and
+tlosint-config keep the stronger guarantee.
+
+What keeps it honest: requirements.txt is fully hash-pinned and carries a
+--require-hashes directive, so the build can only ever install the exact
+artifacts we locked. Network access cannot change what lands in the package,
+only whether the build succeeds at all.
+
+The alternative -- vendoring wheels into the source package -- was rejected:
+it would mean committing ~40 MB of binaries to main, which handoff section 8
+forbids, and the wheels would have to be downloaded with the chroot's exact
+interpreter and platform tags rather than the host's.

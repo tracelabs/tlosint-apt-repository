@@ -1,0 +1,34 @@
+Source: tlosint-ghunt
+Section: net
+Priority: optional
+Maintainer: Trace Labs <jeff.g@tracelabs.org>
+Build-Depends: debhelper-compat (= 13),
+               dh-virtualenv (>= 1.2.2),
+               python3-dev,
+               python3-venv,
+               python3-virtualenv,
+               libffi-dev,
+               libssl-dev,
+               zlib1g-dev,
+               libjpeg-dev,
+               libfreetype-dev
+Standards-Version: 4.7.0
+Homepage: https://github.com/mxrch/GHunt
+Rules-Requires-Root: no
+
+Package: tlosint-ghunt
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}, python3
+Description: OSINT tool for Google accounts and services
+ GHunt extracts information from Google accounts, documents, photos and
+ other services from an email address or a Gaia ID.
+ .
+ GHunt requires Google account cookies before it can do anything. Run
+ "ghunt login" once as the user who will run it; credentials are stored in
+ ~/.malfrats/ghunt. This package deliberately does not attempt to provision
+ them at install time -- they are per-user and cannot be obtained unattended.
+ .
+ Ships a self-contained virtualenv under /opt/tracelabs/ghunt so its
+ dependency pins cannot collide with other OSINT tools on the system. It
+ pins pillow<11 where maigret resolves pillow 12, so the two genuinely
+ cannot share an interpreter.

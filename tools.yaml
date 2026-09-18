@@ -152,12 +152,17 @@
 
 - name: ghunt
   kind: python
-  status: planned
+  status: ready
+  version: 2.3.4
   source: https://github.com/mxrch/GHunt
   summary: Google account OSINT
   notes: >
-    Requires an interactive browser login. Upstream's script defers it with a
-    marker file; packaging must not assume a login exists at install time.
+    Requires Google account cookies (run "ghunt login" once per user; stored in
+    ~/.malfrats/ghunt). The package deliberately does not provision them at
+    install time -- they are per-user and cannot be obtained unattended.
+    Upstream defers the same way via /etc/osint/skip-ghunt-login.
+    AGPL-3.0, so debian/copyright carries the full licence text: trixie's
+    /usr/share/common-licenses has no AGPL-3.
 
 - name: whatsmyname
   kind: python

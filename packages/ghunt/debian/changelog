@@ -1,0 +1,6 @@
+tlosint-ghunt (2.3.4) stable; urgency=medium
+
+  * Initial release. ghunt 2.3.4 in a dedicated virtualenv under
+    /opt/tracelabs/ghunt, with hash-pinned dependencies.
+
+ -- Trace Labs <jeff.g@tracelabs.org>  Thu, 17 Sep 2026 00:00:00 +0000
