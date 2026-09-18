@@ -1,0 +1,75 @@
+# Upstream source pin for metagoofil.  Shell-sourceable: debian/rules does
+# ". debian/upstream.pin" and uses the variables directly.  Keep it to plain
+# VAR=value assignments with no expansion, no quoting tricks and no commands.
+#
+# WHY THIS FILE EXISTS
+#
+# Every other kind:python tool in this repo installs from PyPI against a
+# hash-pinned requirements.txt.  metagoofil cannot: upstream ships no setup.py
+# and no pyproject.toml, so there is no sdist, no wheel, and no PyPI release to
+# pin.  The source tree itself has to be fetched, and it therefore needs its
+# own pinning mechanism with the same property -- network access may decide
+# whether the build succeeds, never what lands in the package.
+#
+# WHY A COMMIT SHA AND NEVER A TAG OR BRANCH
+#
+# A git tag is a mutable pointer.  Anyone with push access can move v1.4.0 to
+# different content, and a fetch by tag would silently pick it up.  A commit
+# SHA is a content hash over the whole tree and its history: it cannot be moved
+# to different content without breaking.  UPSTREAM_REF below is recorded for
+# humans only -- nothing in the build reads it.
+#
+# WHY A SHA256 AS WELL
+#
+# The SHA is a hash of the git object, not of the tarball GitHub serves.  The
+# sha256 pins the actual bytes we download, which is what sha256sum -c can
+# check inside the build with no git available.
+#
+# ADJUDICATION PROCEDURE -- READ THIS BEFORE RE-PINNING
+#
+# GitHub's codeload tarballs are generated on demand, not stored.  Their
+# checksums have changed historically when GitHub altered the compression
+# envelope (gzip level, or git archive's internal format), with byte-identical
+# file contents inside.  So a sha256 mismatch has two very different causes and
+# they must be told apart.  If the build fails on the sha256sum check:
+#
+#   1. Do NOT simply re-pin the new sha256.  That is exactly the action an
+#      attacker who can serve you a different tarball is relying on.
+#
+#   2. Extract the new tarball, and extract the pinned commit independently:
+#
+#        curl -fsSLo new.tar.gz "$UPSTREAM_URL"
+#        mkdir new && tar -xzf new.tar.gz --strip-components=1 -C new
+#        git clone https://github.com/opsdisk/metagoofil ref.git
+#        git -C ref.git archive "$UPSTREAM_COMMIT" | (mkdir old && tar -x -C old)
+#        diff -ru old new
+#
+#      Note that `git archive <commit>` is reproduced from the commit object
+#      itself, so it is the authority here, not the tarball.
+#
+#   3. Identical tree  -> benign re-compression.  Re-pin UPSTREAM_SHA256, set
+#      UPSTREAM_FETCHED to today, bump the package version by one +tlN, and say
+#      in debian/changelog that the tree was verified unchanged against the
+#      pinned commit.  UPSTREAM_COMMIT does not change.
+#
+#   4. Different tree  -> STOP.  The commit no longer resolves to the content
+#      it did, which means a force-push, a repository takeover, or a tampered
+#      download.  Do not re-pin, do not "just make the build green".  The build
+#      failed closed, which is the designed behaviour.  Escalate.
+#
+# Bumping to a genuinely newer upstream release is a different operation: pick
+# the new tag, resolve it to its commit with `git ls-remote --tags`, replace
+# all of UPSTREAM_URL / UPSTREAM_SHA256 / UPSTREAM_COMMIT / UPSTREAM_REF /
+# UPSTREAM_FETCHED together, and set the package version to the new upstream
+# version.  Upstream's own requirements.txt must be re-read and the deps-only
+# lock in ../requirements.txt regenerated at the same time.
+#
+# v1.4.0 is a lightweight tag: it points straight at the commit below, which is
+# also the current head of master (resolved 2026-09-17 with
+# `git ls-remote --tags https://github.com/opsdisk/metagoofil`).
+
+UPSTREAM_URL=https://codeload.github.com/opsdisk/metagoofil/tar.gz/8d50624f1534e63c8bb64ee132d8c2298dba6724
+UPSTREAM_SHA256=2e319f5396d9482cdbdac24b5e313fbc352239885455828019f3173fbeb81b32
+UPSTREAM_COMMIT=8d50624f1534e63c8bb64ee132d8c2298dba6724
+UPSTREAM_REF=v1.4.0
+UPSTREAM_FETCHED=2026-09-17

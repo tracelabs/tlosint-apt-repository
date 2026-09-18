@@ -1,0 +1,38 @@
+# Lintian overrides for tlosint-metagoofil.
+#
+# Every tag here is a direct, unavoidable consequence of two decisions this
+# project made deliberately and documents in handoff sections 2 and 7:
+#
+#   * one virtualenv per tool, so tools with conflicting pins can coexist
+#   * installed under /opt/tracelabs, which FHS reserves for a vendor's own
+#     tree
+#
+# Nothing here is overridden because it was inconvenient to fix. Each entry
+# says what the tag is objecting to and why the objection does not apply.
+# Anything NOT caused by those two decisions is left to fire, so a real
+# regression still surfaces -- this package currently ships several warnings
+# (no-manual-page, package-contains-vcs-control-file, script-not-executable,
+# unusual-interpreter) that are intentionally not silenced.
+
+# Lintian objects to /opt because Debian's own packages must not use it. This
+# is not a Debian archive package: /opt/<provider> is exactly where FHS 3.13
+# says a third-party vendor tree belongs, and it is the project's install
+# root. ~1977 instances, one per shipped path.
+tlosint-metagoofil: dir-or-file-in-opt [opt/tracelabs/*]
+
+# pip byte-compiles on install, and the .pyc files belong to a private venv
+# that no other package can import. The tag exists because a system-wide
+# python3 package must leave byte-compilation to dh_python3 at install time,
+# which does not apply to a self-contained venv under /opt.
+tlosint-metagoofil: package-installs-python-pycache-dir [opt/tracelabs/*]
+
+# Prebuilt manylinux wheels: third-party binaries we did not compile and do
+# not own. debian/rules deliberately excludes /opt/tracelabs from dh_strip
+# (see handoff section 7 item 4) rather than rewriting someone else's .so.
+tlosint-metagoofil: unstripped-binary-or-object [opt/tracelabs/*]
+
+# Same two .so files. dh_shlibdeps is excluded over /opt/tracelabs for the
+# same reason, so no libc dependency is derived from them. The package depends
+# on python3, which pulls libc in; the wheels are built against manylinux
+# baselines older than anything trixie ships.
+tlosint-metagoofil: missing-dependency-on-libc

@@ -1,0 +1,42 @@
+Source: tlosint-metagoofil
+Section: net
+Priority: optional
+Maintainer: Trace Labs <jeff.g@tracelabs.org>
+# curl and ca-certificates are genuinely build-time dependencies here: unlike
+# every other python tool in this repo, the upstream source is not on PyPI and
+# is fetched over HTTPS by debian/rules (see debian/upstream.pin). They happen
+# to be present in the build chroot already, but declaring them is the point --
+# catching undeclared build-deps is exactly why this project builds in sbuild
+# rather than with dpkg-buildpackage on the host.
+Build-Depends: debhelper-compat (= 13),
+               dh-virtualenv (>= 1.2.2),
+               python3-dev,
+               python3-venv,
+               python3-virtualenv,
+               libffi-dev,
+               libssl-dev,
+               zlib1g-dev,
+               curl,
+               ca-certificates
+Standards-Version: 4.7.0
+Homepage: https://github.com/opsdisk/metagoofil
+Rules-Requires-Root: no
+
+Package: tlosint-metagoofil
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}, python3
+Description: metadata harvester for public documents
+ Metagoofil searches Google for documents of a given file type belonging to a
+ target domain (pdf, doc, xls, ppt and so on), downloads them, and leaves the
+ extracted files for a metadata extractor such as exiftool to process.
+ .
+ Since version 1.4.0 upstream no longer parses metadata itself: it downloads
+ the documents and expects the operator to run exiftool over the result.
+ .
+ Ships a self-contained virtualenv under /opt/tracelabs/metagoofil so its
+ dependency pins cannot collide with other OSINT tools on the system.
+ .
+ Upstream ships no setup.py and no pyproject.toml, so the tool itself cannot
+ be pip-installed. The virtualenv holds only the pinned dependencies; the
+ upstream source tree is laid down verbatim beside it and reached through a
+ small wrapper on PATH. See debian/upstream.pin for the pinning scheme.
