@@ -1,0 +1,133 @@
+#!/usr/bin/make -f
+#
+# metagoofil: the first "tier C" python tool in this repo.
+#
+# Tiers, as they have turned out:
+#   A  on PyPI, pip-installable            -- maigret, ghunt: one pinned line
+#                                             in requirements.txt and nothing
+#                                             else to do.
+#   B  on GitHub only, but ships packaging metadata (setup.py/pyproject.toml)
+#                                          -- pip can still install it.
+#   C  on GitHub only and ships NO packaging metadata at all. pip cannot
+#      install it as a package under any invocation. metagoofil is the first;
+#      spiderfoot is next and copies this file.
+#
+# THE TIER C MECHANISM
+#
+# The temptation is to synthesise a pyproject.toml so pip has something to
+# chew on. Rejected: it means inventing a package name, a module layout and an
+# entry point that upstream does not have, and then maintaining that fiction
+# across every upstream bump. It also puts our fabricated metadata inside the
+# venv where a future reader would reasonably assume upstream wrote it.
+#
+# Instead the two halves are kept apart and neither is asked to do the other's
+# job:
+#
+#   dh_virtualenv builds the ENVIRONMENT from a deps-only requirements.txt
+#   (--skip-install, as for every tool here -- see handoff section 7 item 3).
+#
+#   We then fetch the upstream SOURCE, verify it against debian/upstream.pin,
+#   and lay it down beside the venv, plus a wrapper in the venv's bin/.
+#
+# The ordering is what makes this safe: dh_virtualenv has already finished and
+# exited by the time anything is laid down, so it never sees lib/metagoofil/
+# or bin/metagoofil and there is nothing for the two to fight over. Resulting
+# layout under /opt/tracelabs/metagoofil:
+#
+#   bin/python3                   dh_virtualenv's, shebangs already rewritten
+#   bin/metagoofil                ours, /bin/sh wrapper, 0755
+#   lib/python3.13/site-packages  dependencies only
+#   lib/metagoofil/               upstream tree, verbatim
+#
+export DH_VIRTUALENV_INSTALL_ROOT=/opt/tracelabs
+
+# Where the upstream tree is laid down. Referenced three times below, so it is
+# named once here.
+UPSTREAM_DIR = debian/tlosint-metagoofil/opt/tracelabs/metagoofil/lib/metagoofil
+VENV_BIN     = debian/tlosint-metagoofil/opt/tracelabs/metagoofil/bin
+
+%:
+	dh $@ --with python-virtualenv
+
+# See handoff section 7 for why each dh_virtualenv flag is here. In short:
+#   --install-suffix  otherwise the venv lands in /opt/tracelabs/tlosint-metagoofil
+#   --skip-install    this source package is packaging only; with tier C there
+#                     is not even a setup.py for pip to find, so the flag is
+#                     not merely tidy here, it is the only thing that works
+# Hash enforcement lives inside requirements.txt, not in --extra-pip-arg,
+# which would also be applied to the unpinned pip/setuptools/wheel bootstrap.
+#
+# The fetch is inlined in this recipe rather than split into a debian/*.sh
+# helper on purpose: a new script needs its executable bit committed with
+# `git update-index --chmod=+x`, and forgetting that surfaces as a bare
+# "Permission denied" from inside fakeroot. build/build-package.sh guards
+# debian/rules and the maintainer scripts against exactly that failure, but it
+# cannot guard a helper it does not know about. No new file, no new bit.
+#
+# curl flags: --proto '=https' --tlsv1.2 refuse a plaintext or downgraded
+# redirect outright rather than trusting the sha256 to catch it afterwards,
+# and -f makes an HTTP error a non-zero exit instead of a saved error page.
+# The sha256sum -c is the actual gate -- if it fails, read debian/upstream.pin
+# before touching anything, it documents how to tell re-compression from an
+# attack.
+override_dh_virtualenv:
+	dh_virtualenv \
+	    --install-suffix metagoofil \
+	    --skip-install \
+	    --python /usr/bin/python3 \
+	    --preinstall pip \
+	    --preinstall setuptools \
+	    --preinstall wheel \
+	    --requirements requirements.txt
+	set -eu; . debian/upstream.pin; \
+	  curl -fsSL --proto '=https' --tlsv1.2 -o upstream.tar.gz "$$UPSTREAM_URL"; \
+	  echo "$$UPSTREAM_SHA256  upstream.tar.gz" | sha256sum -c -; \
+	  mkdir -p $(UPSTREAM_DIR); \
+	  tar -xzf upstream.tar.gz --strip-components=1 -C $(UPSTREAM_DIR)
+	install -m 0755 debian/metagoofil.wrapper $(VENV_BIN)/metagoofil
+	# dh_virtualenv rewrites the build path out of bin/activate, activate.csh,
+	# activate.fish and activate.ps1, but it does not know about activate.nu --
+	# virtualenv grew the nushell activator after dh_virtualenv's rewrite list
+	# was written. Left alone it ships the absolute sbuild scratch directory,
+	# e.g. /build/tlosint-metagoofil-XXXXXX/.../debian/tlosint-metagoofil/opt/...,
+	# which is both broken for the user and a reproducibility wart.
+	[ ! -f $(VENV_BIN)/activate.nu ] || \
+	  sed -i "s|$(CURDIR)/debian/tlosint-metagoofil/opt/tracelabs/metagoofil|/opt/tracelabs/metagoofil|g" \
+	      $(VENV_BIN)/activate.nu
+	# Guard rather than trust: fail the build if ANY file in the venv's bin/
+	# still names the build directory. This is what catches the next activator
+	# dh_virtualenv has not learned about yet, instead of shipping it silently.
+	if grep -rIl -- "$(CURDIR)" $(VENV_BIN)/; then \
+	    echo "ERROR: build path leaked into the venv bin/ (see files above)" >&2; \
+	    exit 1; \
+	fi
+
+# upstream.tar.gz is a build artifact in the source tree. It must not survive
+# into the source package: a tier C .dsc that carried the tarball would build
+# green even if the fetch were broken, which would hide precisely the failure
+# this design is meant to expose.
+override_dh_auto_clean:
+	dh_auto_clean
+	rm -f upstream.tar.gz
+
+# The venv contains prebuilt wheels -- third-party binaries we did not
+# compile. Debian's binary-mangling helpers must not touch them:
+#   dh_dwz       fails outright on their debug info (or absence of it)
+#   dh_strip     would rewrite vendored .so files we do not own
+#   dh_shlibdeps would derive Depends from bundled libs already in the package
+override_dh_dwz:
+
+override_dh_strip:
+	dh_strip --exclude=/opt/tracelabs
+
+override_dh_shlibdeps:
+	dh_shlibdeps -X/opt/tracelabs
+
+# Expose the entry point on PATH. Unlike ghunt, the target is our own wrapper
+# rather than a console_scripts stub dh_virtualenv generated -- metagoofil has
+# no entry point to generate one from.
+override_dh_link:
+	dh_link
+	mkdir -p debian/tlosint-metagoofil/usr/bin
+	ln -sf /opt/tracelabs/metagoofil/bin/metagoofil \
+	    debian/tlosint-metagoofil/usr/bin/metagoofil

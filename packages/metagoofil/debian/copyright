@@ -1,0 +1,33 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: metagoofil
+Upstream-Contact: https://github.com/opsdisk/metagoofil/issues
+Source: https://github.com/opsdisk/metagoofil
+Comment: Upstream's LICENSE file is the plain GNU GPL version 3 notice -- the
+ "This program is free software..." paragraphs -- without the full licence
+ text and without an SPDX identifier. That is why GitHub's licence detector
+ reports NOASSERTION for this repository rather than GPL-3.0. The notice
+ itself is unambiguous: version 3 "or (at your option) any later version",
+ i.e. GPL-3.0+.
+
+Files: *
+Copyright: 2011-2026 Christian Martorella
+           2019-2026 Opsdisk LLC and metagoofil contributors
+License: GPL-3.0+
+
+Files: debian/*
+Copyright: 2026 Trace Labs
+License: GPL-3.0+
+
+License: GPL-3.0+
+ This program is free software: you can redistribute it and/or modify it
+ under the terms of the GNU General Public License as published by the Free
+ Software Foundation, either version 3 of the License, or (at your option)
+ any later version.
+ .
+ This program is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ more details.
+ .
+ On Debian systems, the complete text of the GNU General Public License
+ version 3 can be found in "/usr/share/common-licenses/GPL-3".

@@ -1,0 +1,11 @@
+#!/bin/sh
+# metagoofil ships no console_scripts entry point -- see debian/upstream.pin.
+# Absolute interpreter path: immune to PATH and to shebang rewriting.
+#
+# Note: metagoofil.py opens user_agents.txt relative to the current working
+# directory (upstream behaviour), so -r/--user-agents only finds the shipped
+# list when run from the install tree. Deliberately not worked around here:
+# this wrapper stays a transparent exec, and changing cwd would break the
+# relative -o output paths users pass.
+exec /opt/tracelabs/metagoofil/bin/python3 \
+     /opt/tracelabs/metagoofil/lib/metagoofil/metagoofil.py "$@"
