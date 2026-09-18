@@ -1,0 +1,117 @@
+#!/usr/bin/make -f
+#
+# spiderfoot: "tier C", the same shape as packages/metagoofil.
+#
+# packages/metagoofil/debian/rules is the canonical explanation of the tier C
+# mechanism -- why a synthesised pyproject.toml was rejected, why the venv and
+# the upstream tree are built by two separate steps, and why the fetch is
+# inlined in this recipe rather than split into a debian/*.sh helper (a new
+# script needs its executable bit committed with `git update-index --chmod=+x`,
+# and forgetting that surfaces as a bare "Permission denied" from inside
+# fakeroot). Read that file; it is not repeated here.
+#
+# WHAT IS DIFFERENT ABOUT THIS PACKAGE
+#
+#   1. The whole upstream checkout is laid down, not just a script. SpiderFoot
+#      resolves modules/, correlations/ and spiderfoot/static/ relative to
+#      sf.py, so shipping only the top-level entry points would produce a tool
+#      that starts and then finds no modules at all.
+#
+#   2. Three names go on PATH, not one: spiderfoot (the web UI), sfcli (the
+#      client) and sf.py (compatibility alias -- upstream's docs and its own
+#      integration tests call the tool by that name).
+#
+#   3. ../requirements.txt is NOT upstream's requirements.txt. Upstream's
+#      upper bounds are largely uninstallable on Python 3.13. See
+#      debian/README.Debian for the full table; do not regenerate the lock
+#      from upstream's file without reading it.
+#
+# Deliberately NO systemd unit. sf.py starts a CherryPy web UI on
+# 127.0.0.1:5001; whether an analyst workstation runs a listening service is
+# an operator decision, not a packaging one.
+#
+export DH_VIRTUALENV_INSTALL_ROOT=/opt/tracelabs
+
+UPSTREAM_DIR = debian/tlosint-spiderfoot/opt/tracelabs/spiderfoot/lib/spiderfoot
+VENV_BIN     = debian/tlosint-spiderfoot/opt/tracelabs/spiderfoot/bin
+
+%:
+	dh $@ --with python-virtualenv
+
+# Flags as for every python tool here:
+#   --install-suffix  otherwise the venv lands in /opt/tracelabs/tlosint-spiderfoot
+#   --skip-install    packaging-only source package; with tier C there is not
+#                     even a setup.py for pip to find
+# Hash enforcement lives inside requirements.txt, not in --extra-pip-arg,
+# which would also be applied to the unpinned pip/setuptools/wheel bootstrap.
+#
+# curl flags: --proto '=https' --tlsv1.2 refuse a plaintext or downgraded
+# redirect outright rather than trusting the sha256 to catch it afterwards,
+# and -f makes an HTTP error a non-zero exit instead of a saved error page.
+# The sha256sum -c is the actual gate -- if it fails, read debian/upstream.pin
+# before touching anything.
+override_dh_virtualenv:
+	dh_virtualenv \
+	    --install-suffix spiderfoot \
+	    --skip-install \
+	    --python /usr/bin/python3 \
+	    --preinstall pip \
+	    --preinstall setuptools \
+	    --preinstall wheel \
+	    --requirements requirements.txt
+	set -eu; . debian/upstream.pin; \
+	  curl -fsSL --proto '=https' --tlsv1.2 -o upstream.tar.gz "$$UPSTREAM_URL"; \
+	  echo "$$UPSTREAM_SHA256  upstream.tar.gz" | sha256sum -c -; \
+	  mkdir -p $(UPSTREAM_DIR); \
+	  tar -xzf upstream.tar.gz --strip-components=1 -C $(UPSTREAM_DIR)
+	install -m 0755 debian/spiderfoot.wrapper $(VENV_BIN)/spiderfoot
+	install -m 0755 debian/sfcli.wrapper $(VENV_BIN)/sfcli
+	# dh_virtualenv 1.2.2 rewrites the build path out of bin/activate,
+	# activate.csh and activate.fish, but not activate.nu -- nushell stores the
+	# path in a raw string its fixer does not match. Left alone it ships the
+	# absolute sbuild scratch directory, which is both broken for the user and
+	# a reproducibility wart. metagoofil hit this first.
+	[ ! -f $(VENV_BIN)/activate.nu ] || \
+	  sed -i "s|$(CURDIR)/debian/tlosint-spiderfoot/opt/tracelabs/spiderfoot|/opt/tracelabs/spiderfoot|g" \
+	      $(VENV_BIN)/activate.nu
+	# Guard rather than trust: fail the build if ANY file in the venv's bin/
+	# still names the build directory. This is what catches the next activator
+	# dh_virtualenv has not learned about yet, instead of shipping it silently.
+	if grep -rIl -- "$(CURDIR)" $(VENV_BIN)/; then \
+	    echo "ERROR: build path leaked into the venv bin/ (see files above)" >&2; \
+	    exit 1; \
+	fi
+
+# upstream.tar.gz is a build artifact in the source tree. It must not survive
+# into the source package: a tier C .dsc that carried the tarball would build
+# green even if the fetch were broken, which would hide precisely the failure
+# this design is meant to expose.
+override_dh_auto_clean:
+	dh_auto_clean
+	rm -f upstream.tar.gz
+
+# The venv contains prebuilt wheels -- third-party binaries we did not
+# compile. Debian's binary-mangling helpers must not touch them:
+#   dh_dwz       fails outright on their debug info (or absence of it)
+#   dh_strip     would rewrite vendored .so files we do not own
+#   dh_shlibdeps would derive Depends from bundled libs already in the package
+override_dh_dwz:
+
+override_dh_strip:
+	dh_strip --exclude=/opt/tracelabs
+
+override_dh_shlibdeps:
+	dh_shlibdeps -X/opt/tracelabs
+
+# Expose the entry points on PATH. All three targets are our own wrappers
+# rather than console_scripts stubs -- upstream has no entry points to
+# generate them from. sf.py is a second link to the same wrapper, not a copy.
+override_dh_link:
+	dh_link
+	mkdir -p debian/tlosint-spiderfoot/usr/bin
+	ln -sf /opt/tracelabs/spiderfoot/bin/spiderfoot \
+	    debian/tlosint-spiderfoot/usr/bin/spiderfoot
+	ln -sf /opt/tracelabs/spiderfoot/bin/sfcli \
+	    debian/tlosint-spiderfoot/usr/bin/sfcli
+	ln -sf /opt/tracelabs/spiderfoot/bin/spiderfoot \
+	    debian/tlosint-spiderfoot/usr/bin/sf.py

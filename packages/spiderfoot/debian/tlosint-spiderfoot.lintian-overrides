@@ -1,0 +1,95 @@
+# Lintian overrides for tlosint-spiderfoot.
+#
+# Same rule as packages/metagoofil: every tag here is a direct, unavoidable
+# consequence of two decisions this project made deliberately and documents in
+# handoff sections 2 and 7 --
+#
+#   * one virtualenv per tool, so tools with conflicting pins can coexist
+#   * installed under /opt/tracelabs, which FHS reserves for a vendor's own
+#     tree
+#
+# Nothing here is overridden because it was inconvenient to fix. Anything NOT
+# caused by those two decisions is left to fire, so a real regression still
+# surfaces. This package intentionally ships several unsilenced warnings --
+# no-manual-page, package-contains-vcs-control-file,
+# embedded-javascript-library, script-not-executable and friends, all of them
+# properties of the upstream tree we ship verbatim and none of them worth
+# diverging from upstream to silence.
+
+# Lintian objects to /opt because Debian's own packages must not use it. This
+# is not a Debian archive package: /opt/<provider> is exactly where FHS 3.13
+# says a third-party vendor tree belongs, and it is the project's install
+# root. Many thousands of instances here -- the venv plus the whole upstream
+# checkout, which is far larger than metagoofil's single script.
+tlosint-spiderfoot: dir-or-file-in-opt [opt/tracelabs/*]
+
+# pip byte-compiles on install, and the .pyc files belong to a private venv
+# that no other package can import. The tag exists because a system-wide
+# python3 package must leave byte-compilation to dh_python3 at install time,
+# which does not apply to a self-contained venv under /opt.
+tlosint-spiderfoot: package-installs-python-pycache-dir [opt/tracelabs/*]
+
+# Prebuilt manylinux wheels: third-party binaries we did not compile and do
+# not own. debian/rules deliberately excludes /opt/tracelabs from dh_strip
+# (see handoff section 7 item 4) rather than rewriting someone else's .so.
+# spiderfoot pulls far more of these than metagoofil -- lxml, cryptography,
+# pillow and cffi all ship compiled extensions.
+tlosint-spiderfoot: unstripped-binary-or-object [opt/tracelabs/*]
+
+# Same wheels. dh_shlibdeps is excluded over /opt/tracelabs for the same
+# reason, so no libc dependency is derived from them. The package depends on
+# python3, which pulls libc in; the wheels are built against manylinux
+# baselines older than anything trixie ships.
+tlosint-spiderfoot: missing-dependency-on-libc
+
+# ---------------------------------------------------------------------------
+# The two below are errors, not warnings, and they are new to this package --
+# metagoofil never tripped them because its venv holds two small wheels and
+# spiderfoot's holds pillow, lxml and pyyaml. They are overridden because they
+# are structural to the venv design, not because an error is inconvenient.
+# ---------------------------------------------------------------------------
+
+# A manylinux wheel is BY CONSTRUCTION a bundle of the C libraries it was
+# linked against -- that is the entire point of the manylinux standard and the
+# auditwheel tool that produces them. pillow vendors libjpeg, libpng, libtiff,
+# freetype, lcms2, openjpeg, zlib, bzip2 and libzstd; lxml vendors libxml2 and
+# zlib; pyyaml vendors libyaml.
+#
+# Lintian's objection is the correct one for a Debian archive package: such a
+# package must link the system copy so that a security update to libxml2 fixes
+# every user of it at once. That objection cannot be satisfied here without
+# abandoning wheels entirely and building every extension from source against
+# trixie's libraries -- which would mean a compiler toolchain in the build, a
+# different artifact on every architecture, and divergence from the exact
+# hash-pinned bytes that requirements.txt exists to guarantee.
+#
+# The tradeoff is real and is accepted knowingly: these vendored libraries are
+# updated when the wheel is updated, i.e. when requirements.txt is
+# regenerated, NOT when Debian ships a security update. Anyone regenerating
+# the lock should treat a pillow or lxml bump as security-relevant rather than
+# cosmetic. This is the standard consequence of the one-venv-per-tool
+# decision and applies to every python tool in this repo that pulls a wheel
+# with a compiled extension.
+#
+# Note the "*" before the path: embedded-library emits the NAME of the
+# detected library as its first argument ("embedded-library zlib [path]"), so
+# an override written as "embedded-library [opt/tracelabs/*]" matches nothing
+# and lintian reports mismatched-override instead. The wildcard covers the
+# library name; the bracketed glob still confines the override to our tree.
+tlosint-spiderfoot: embedded-library * [opt/tracelabs/*]
+
+# netaddr ships the IEEE OUI and IAB registries as its own package data and
+# reads them through pkg_resources-style relative paths inside its own
+# package directory. Debian's netaddr is patched to read /usr/share/ieee-data
+# instead, which is what this tag is asking for.
+#
+# That patch is not available to us: the venv installs the upstream wheel from
+# PyPI, unmodified and hash-pinned, and pointing it at the system ieee-data
+# would mean carrying a patch of our own against a dependency -- exactly the
+# kind of invented divergence the tier C design note rejects. Depending on
+# ieee-data would also not help, because upstream netaddr would still not look
+# there.
+#
+# Consequence: MAC vendor lookups resolve against the registry snapshot inside
+# the pinned netaddr, which ages with the pin rather than with the system.
+tlosint-spiderfoot: package-installs-ieee-data [opt/tracelabs/*]

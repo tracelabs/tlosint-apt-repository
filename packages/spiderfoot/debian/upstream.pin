@@ -1,0 +1,80 @@
+# Upstream source pin for spiderfoot.  Shell-sourceable: debian/rules does
+# ". debian/upstream.pin" and uses the variables directly.  Keep it to plain
+# VAR=value assignments with no expansion, no quoting tricks and no commands.
+#
+# WHY THIS FILE EXISTS, WHY A COMMIT SHA AND NEVER A TAG, WHY A SHA256 AS
+# WELL, AND THE FULL ADJUDICATION PROCEDURE FOR A SHA256 MISMATCH:
+#
+#   see packages/metagoofil/debian/upstream.pin.
+#
+# That file is the canonical statement of the scheme for every "tier C" tool
+# in this repo and it is not duplicated here.  It is not optional reading: it
+# is what tells you how to distinguish a benign GitHub re-compression from a
+# tampered download BEFORE you re-pin anything, and "just make the build
+# green" is the exact action an attacker is relying on.  Substitute this
+# package's repository (smicallef/spiderfoot) and the variables below wherever
+# that procedure names metagoofil's.
+#
+# ------------------------------------------------------------------------
+# READ THIS: THE TAG AND THE PINNED COMMIT ARE NOT THE SAME THING
+# ------------------------------------------------------------------------
+#
+# The packaging request for this tool named "tag v4.0, commit
+# 0f815a203afebf05c98b605dba5cf0475a0ee5fd".  Those two do not agree, and the
+# discrepancy was resolved in favour of the SHA.  Resolved 2026-09-17 with
+# `git ls-remote --tags https://github.com/smicallef/spiderfoot`:
+#
+#   refs/tags/v4.0  -> b9c345de5b085debc7444fc10e0e26e7745df5f2
+#                      (lightweight tag; 2022-04-07, "Update README.md to
+#                      reflect 4.0, bump to 4.0 in the various places.")
+#
+#   pinned below    -> 0f815a203afebf05c98b605dba5cf0475a0ee5fd
+#                      (2023-11-05, "sfwebui: Update jQuery 3.6.0 to 3.7.1
+#                      (#1822)"), a later commit on master.
+#
+# Both objects exist in the repository; neither is a typo.  The SHA was
+# preferred for three reasons, in order of weight:
+#
+#   1. The dependency analysis that authorised this package's relaxed pins was
+#      performed against the SHA's requirements.txt, not the tag's.  The two
+#      differ, and only the SHA's file matches the analysis:
+#
+#        pin                tag v4.0          0f815a2 (pinned)
+#        lxml               >=4.6.3,<5        >=4.9.2,<5
+#        PyPDF2             >=1.26.0,<2       >=1.28.6,<2
+#        publicsuffixlist   >=0.7.9,<0.8      >=0.9.3,<0.10
+#        pyyaml             >=5.4.1,<6        >=6.0.0,<7
+#        dnspython          >=2.1.0,<3        >=2.3.0,<3
+#
+#      Packaging the tag would mean shipping a tree whose dependency wall was
+#      never examined.
+#
+#   2. A commit SHA is immutable and a tag is not; the instruction to pin this
+#      package was itself "pin the SHA, never the tag".
+#
+#   3. The pinned commit is strictly newer and carries security-relevant
+#      fixes the tag does not, notably the bundled jQuery 3.6.0 -> 3.7.1 bump
+#      in the web UI that is the pinned commit's own subject.
+#
+# The shipped VERSION file at the pinned commit reads "SpiderFoot 4.0.0" and
+# spiderfoot/__version__.py agrees, so the Debian version 4.0 is accurate for
+# this tree.  Upstream cut no release after v4.0; the pinned commit is
+# post-4.0 master.  If that matters to a future maintainer, the honest
+# description is "4.0 plus 19 months of master", and a version such as
+# 4.0+git20231105 would be the conventional way to say so -- it was not used
+# here only because the package was specified as version 4.0.
+#
+# If you bump this pin, re-read upstream's requirements.txt at the new commit
+# and regenerate ../requirements.txt, then update the table in
+# debian/README.Debian.  Upstream's pins drift and the relaxation decisions
+# recorded there are only valid against the pins they were made from.
+
+UPSTREAM_URL=https://github.com/smicallef/spiderfoot/archive/0f815a203afebf05c98b605dba5cf0475a0ee5fd.tar.gz
+UPSTREAM_SHA256=d5eaa95d612795e7c1da309324e98c9e1ac1c67afc5597c38f211f76bbac4ba0
+UPSTREAM_COMMIT=0f815a203afebf05c98b605dba5cf0475a0ee5fd
+# NOTE: UPSTREAM_REF is NOT the v4.0 tag -- see the section above. It is a
+# bare token with no spaces, parentheses or quotes on purpose: debian/rules
+# sources this file with /bin/sh, so anything fancier is a syntax error that
+# fails the build after the whole virtualenv has already been installed.
+UPSTREAM_REF=post-v4.0-master
+UPSTREAM_FETCHED=2026-09-17

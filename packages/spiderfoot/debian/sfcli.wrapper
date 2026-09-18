@@ -1,0 +1,6 @@
+#!/bin/sh
+# Command line client for a running SpiderFoot server. Same rationale as
+# debian/spiderfoot.wrapper: no entry point upstream, absolute interpreter
+# path, no cd.
+exec /opt/tracelabs/spiderfoot/bin/python3 \
+     /opt/tracelabs/spiderfoot/lib/spiderfoot/sfcli.py "$@"

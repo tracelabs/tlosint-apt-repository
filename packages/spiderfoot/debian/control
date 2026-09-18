@@ -1,0 +1,47 @@
+Source: tlosint-spiderfoot
+Section: net
+Priority: optional
+Maintainer: Trace Labs <jeff.g@tracelabs.org>
+# curl and ca-certificates are genuinely build-time dependencies here, exactly
+# as for tlosint-metagoofil: the upstream source is not on PyPI and is fetched
+# over HTTPS by debian/rules (see debian/upstream.pin). They happen to be
+# present in the build chroot already, but declaring them is the point.
+Build-Depends: debhelper-compat (= 13),
+               dh-virtualenv (>= 1.2.2),
+               python3-dev,
+               python3-venv,
+               python3-virtualenv,
+               libffi-dev,
+               libssl-dev,
+               zlib1g-dev,
+               curl,
+               ca-certificates
+Standards-Version: 4.7.0
+Homepage: https://github.com/smicallef/spiderfoot
+Rules-Requires-Root: no
+
+Package: tlosint-spiderfoot
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}, python3
+Description: open source intelligence automation platform
+ SpiderFoot automates OSINT collection against an IP address, domain name,
+ hostname, network subnet, ASN, e-mail address or person's name. It queries
+ over 200 data sources and correlates the results into a single graph of
+ entities and relationships.
+ .
+ Two entry points are on PATH. "spiderfoot" starts the CherryPy web user
+ interface, by default on 127.0.0.1:5001; nothing is started automatically,
+ because this package deliberately ships no systemd unit -- whether an OSINT
+ workstation runs a listening service is an operator decision, not a
+ packaging one. "sfcli" is the command line client for an already running
+ server. "sf.py" is a compatibility alias for "spiderfoot", because upstream's
+ own tooling and documentation refer to the tool by that name.
+ .
+ Ships a self-contained virtualenv under /opt/tracelabs/spiderfoot so its
+ dependency pins cannot collide with other OSINT tools on the system.
+ .
+ Upstream ships no setup.py and no pyproject.toml, so the tool itself cannot
+ be pip-installed. The virtualenv holds only the pinned dependencies; the
+ upstream source tree is laid down verbatim beside it and reached through
+ small wrappers on PATH. See debian/upstream.pin for the pinning scheme and
+ debian/README.Debian for the dependency relaxation this package carries.
