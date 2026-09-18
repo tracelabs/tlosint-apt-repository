@@ -1,0 +1,17 @@
+#!/bin/sh
+# SpiderFoot ships no console_scripts entry point -- see debian/upstream.pin.
+# Absolute interpreter path: immune to PATH and to shebang rewriting.
+#
+# No cd into the install tree is needed, and none is done. sf.py locates
+# modules/, correlations/ and spiderfoot/static/ with
+# os.path.dirname(os.path.abspath(__file__)), so it is cwd-independent, and
+# running it by absolute path also puts /opt/tracelabs/spiderfoot/lib/spiderfoot
+# at the front of sys.path, which is what makes "import spiderfoot, sflib"
+# resolve. Changing cwd here would only break the relative paths users pass to
+# -o and friends.
+#
+# This wrapper is also the target of the /usr/bin/sf.py compatibility symlink.
+# Upstream's documentation and its own integration tests invoke the tool as
+# "sf.py", so that name is kept on PATH rather than silently renamed.
+exec /opt/tracelabs/spiderfoot/bin/python3 \
+     /opt/tracelabs/spiderfoot/lib/spiderfoot/sf.py "$@"

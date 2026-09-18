@@ -1,0 +1,22 @@
+tlosint-spiderfoot (4.0) stable; urgency=medium
+
+  * Initial release. SpiderFoot 4.0 in a dedicated virtualenv under
+    /opt/tracelabs/spiderfoot, with hash-pinned dependencies.
+  * "Tier C" package, following packages/metagoofil: upstream ships neither
+    setup.py nor pyproject.toml, so pip cannot install it as a package. The
+    virtualenv holds only the pinned dependencies; the upstream tree is
+    fetched at build time, verified against the commit SHA and sha256 in
+    debian/upstream.pin, and laid down verbatim beside the venv.
+  * Ships relaxed dependency pins. Upstream's requirements.txt is a wall of
+    2023-era upper bounds that are largely uninstallable on trixie's Python
+    3.13; in particular cryptography>=3.4.8,<4 has no cp313 wheel and would
+    require a Rust toolchain in the build. The upper bounds are stripped and
+    the lower bounds kept, except for PyPDF2 and secure, where relaxing was
+    tested and breaks upstream code at runtime. Every divergence is recorded
+    in debian/README.Debian.
+  * Pinned to post-v4.0 master rather than the v4.0 tag; the reasoning is in
+    debian/upstream.pin, which must be read before re-pinning.
+  * No systemd unit: sf.py starts a web UI on 127.0.0.1:5001 and whether that
+    listens on an analyst workstation is an operator decision.
+
+ -- Trace Labs <jeff.g@tracelabs.org>  Thu, 17 Sep 2026 00:00:00 +0000

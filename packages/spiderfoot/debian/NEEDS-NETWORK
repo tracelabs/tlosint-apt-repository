@@ -1,0 +1,37 @@
+This package reaches the network twice during the build, so it cannot be built
+in sbuild's default offline chroot. build/build-package.sh passes
+--enable-network when this marker is present.
+
+  1. dh_virtualenv installs the pinned dependencies from PyPI.
+  2. debian/rules fetches the upstream source tree from github.com.
+
+The second one is specific to the tier C tools -- metagoofil first, spiderfoot
+here. SpiderFoot ships no setup.py and no pyproject.toml, so it has no PyPI
+release to install; the source tree itself has to be downloaded.
+
+This is a deliberate, narrow exception to Debian's "builds must be offline"
+rule, and it is per-package rather than global so that tlosint-meta and
+tlosint-config keep the stronger guarantee.
+
+What keeps it honest is that both fetches are hash-pinned:
+
+  * requirements.txt is fully hash-pinned and carries a --require-hashes
+    directive, so pip can only ever install the exact artifacts we locked.
+  * debian/upstream.pin names a 40-character commit SHA and the sha256 of the
+    tarball, and debian/rules verifies the download with sha256sum -c before
+    unpacking a single file.
+
+So network access can change whether the build succeeds, never what lands in
+the package. A mismatch fails the build closed; see debian/upstream.pin for
+how to tell a benign re-compression from an attack before re-pinning anything.
+
+Note that the relaxed dependency pins this package carries (see
+debian/README.Debian) do not weaken any of that. Relaxation changed WHICH
+versions were selected, once, at lock generation time. The resulting
+requirements.txt is hash-pinned exactly as tightly as every other package
+here, and the build cannot drift to a newer dependency on its own.
+
+The alternative -- vendoring the upstream tree and the wheels into the source
+package -- was rejected: it would mean committing binaries to main, which
+handoff section 8 forbids, and the wheels would have to be downloaded with the
+chroot's exact interpreter and platform tags rather than the host's.
