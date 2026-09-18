@@ -40,9 +40,17 @@ done
 
 mkdir -p "$ARTIFACTS"
 
-# TODO: for kind:python packages, fetch and verify the upstream tarball into
-# the source tree here before building. Must be hash-pinned -- see
-# requirements.txt generated with `pip-compile --generate-hashes`.
+# Upstream source is deliberately NOT fetched here. dpkg-source only tars
+# packages/<pkg>/, so anything under build/ is absent from the .dsc -- a source
+# package only we could rebuild is not a publishable one. Fetching here would
+# also vendor upstream into the .dsc (contradicting the native-format rationale
+# in handoff section 8) and would turn the narrow, per-package network opt-in
+# below into a global host-side one.
+#
+# Instead: tools on PyPI, and tools whose upstream ships an installable tree,
+# are pinned as hashed lines in the package's own requirements.txt. Tools with
+# no packaging metadata at all fetch in their debian/rules against a pinned
+# commit recorded in debian/upstream.pin. See handoff section 7.
 
 # Packages that install from a language ecosystem at build time (dh_virtualenv
 # reaching PyPI, and later cargo/go) cannot build in sbuild's default offline

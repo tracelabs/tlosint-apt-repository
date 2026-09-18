@@ -36,12 +36,45 @@ read -r -d '' SMOKE <<'SMOKE_EOF' || true
         esac
     done
 
-    # Tools we package ourselves get a real smoke test -- that is where the
-    # breakage lives (venv paths, wrappers pointing at absent interpreters).
-    # Distro tools need none; apt already guarantees them.
-    for wrapper in /usr/bin/tlosint-*; do
-        [ -e "$wrapper" ] || continue
-        [ -x "$wrapper" ] || { echo "not executable: $wrapper" >&2; exit 1; }
+    # Entry points shipped by our own packages get a real smoke test -- that is
+    # where breakage lives: venv paths, shebangs left pointing into the build
+    # directory, hand-written wrappers naming an interpreter that is not there.
+    #
+    # Derived from "dpkg -L" rather than a hardcoded list or a /usr/bin/tlosint-*
+    # glob. The binaries are named after the TOOL (maigret, ghunt), not after the
+    # package (tlosint-maigret), so that glob matched nothing and this check
+    # silently passed for as long as it existed. Asking dpkg keeps tools.yaml as
+    # the only place the tool list lives.
+    for deb in /debs/*.deb; do
+        pkg="$(dpkg-deb -f "$deb" Package)"
+        # Pure-Depends and config packages ship no entry point by design.
+        case "$pkg" in tlosint-meta|tlosint-config) continue ;; esac
+
+        found=0
+        while IFS= read -r f; do
+            [ -e "$f" ] || continue
+            found=1
+            [ -x "$f" ] || { echo "  not executable: $f" >&2; exit 1; }
+
+            target="$(readlink -f "$f")"
+            [ -e "$target" ] || { echo "  dangling: $f -> $target" >&2; exit 1; }
+            case "$target" in
+                /opt/tracelabs/*) : ;;
+                *) echo "  $f resolves outside /opt/tracelabs: $target" >&2; exit 1 ;;
+            esac
+
+            # The check that actually proves the venv works end to end.
+            if "$f" --help >/dev/null 2>&1; then
+                echo "  entrypoint ok: $f -> $target"
+            else
+                echo "  FAILED: $f --help exited non-zero" >&2
+                exit 1
+            fi
+        done <<EOF
+$(dpkg -L "$pkg" | grep '^/usr/bin/' || true)
+EOF
+
+        [ "$found" = 1 ] || { echo "  no /usr/bin entry point in $pkg" >&2; exit 1; }
     done
 
     echo "install test passed"
