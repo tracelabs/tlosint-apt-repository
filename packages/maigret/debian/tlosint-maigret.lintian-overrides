@@ -2,12 +2,6 @@
 # package being wrong. dh_virtualenv ships a whole interpreter environment of
 # prebuilt upstream wheels under /opt, which is precisely what Debian policy
 # assumes a package does not do.
-#
-# Deliberately NOT overridden, so a real regression still surfaces:
-#   license-problem-font-adobe-copyrighted-fragment
-#   privacy-breach-uses-embedded-file
-# Those are substantive findings about what we would be redistributing, not
-# artefacts of the packaging design. See debian/README.Debian when resolved.
 
 # /opt/tracelabs/<tool> is the deliberate install root -- one venv per tool, so
 # that one tool's pins can never constrain another's. See debian/rules.
@@ -31,3 +25,8 @@ embedded-library
 # pip byte-compiles into the venv as it installs. The .pyc files belong to the
 # venv's own interpreter and are never imported by the system python3.
 package-installs-python-pycache-dir
+
+# pyvis and maigret's own report templates reference their CSS/JS from a public
+# CDN rather than bundling it. Upstream's choice, in upstream's templates; we
+# ship them unmodified.
+privacy-breach-uses-embedded-file

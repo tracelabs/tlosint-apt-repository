@@ -6,7 +6,8 @@
 
 export DH_VIRTUALENV_INSTALL_ROOT=/opt/tracelabs
 
-VENV_BIN = debian/tlosint-maigret/opt/tracelabs/maigret/bin
+VENV_BIN  = debian/tlosint-maigret/opt/tracelabs/maigret/bin
+VENV_SITE = debian/tlosint-maigret/opt/tracelabs/maigret/lib/python3.13/site-packages
 
 %:
 	dh $@ --with python-virtualenv
@@ -31,6 +32,15 @@ override_dh_virtualenv:
 	    --preinstall setuptools \
 	    --preinstall wheel \
 	    --requirements requirements.txt
+
+	# reportlab ships two free fonts -- DarkGardenMK (GPL, Michal Kosmulski)
+	# and callig15 (permissive, Vanroose/Dachian) -- that embed an Adobe
+	# copyrighted Type 1 code fragment their own licences cannot cover.
+	# Debian repacks reportlab to drop them for the same reason. Only
+	# reportlab's own graphics/testshapes.py references them, so removing
+	# them costs nothing here.
+	rm -f $(VENV_SITE)/reportlab/fonts/DarkGardenMK.pfb \
+	      $(VENV_SITE)/reportlab/fonts/callig15.pfb
 
 	# dh_virtualenv 1.2.2 rewrites the build path out of activate, activate.csh
 	# and activate.fish, but not out of activate.nu -- virtualenv grew the

@@ -93,3 +93,13 @@ tlosint-spiderfoot: embedded-library * [opt/tracelabs/*]
 # Consequence: MAC vendor lookups resolve against the registry snapshot inside
 # the pinned netaddr, which ages with the pin rather than with the system.
 tlosint-spiderfoot: package-installs-ieee-data [opt/tracelabs/*]
+
+# pip writes console scripts with the POSIX long-shebang form
+#   #!/bin/sh
+#   '''exec' /opt/tracelabs/spiderfoot/bin/python "$0" "$@"
+# when the build path would push a plain #! line past the kernel's 127-byte
+# limit. lintian's shell checker parses the Python that follows as shell and
+# reports a syntax error. The scripts run correctly; whether this fires at all
+# depends on how long the build directory happens to be, so it varies between
+# a local build and CI.
+tlosint-spiderfoot: shell-script-fails-syntax-check [opt/tracelabs/*]

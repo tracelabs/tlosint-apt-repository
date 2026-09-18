@@ -1,5 +1,6 @@
-tlosint-config (0.0.0) UNRELEASED; urgency=medium
+tlosint-config (2026.09) stable; urgency=medium
 
-  * Initial skeleton. Not yet released.
+  * Initial release. Firefox enterprise policy hardening, installed as
+    /etc/firefox/policies/policies.json.
 
- -- Trace Labs <jeff.g@tracelabs.org>  Wed, 16 Sep 2026 00:00:00 +0000
+ -- Trace Labs <jeff.g@tracelabs.org>  Thu, 17 Sep 2026 00:00:00 +0000
