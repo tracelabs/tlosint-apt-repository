@@ -1,7 +1,11 @@
-tlosint-spiderfoot (4.0) stable; urgency=medium
+tlosint-spiderfoot (4.0+git20231105.0f815a2) stable; urgency=medium
 
-  * Initial release. SpiderFoot 4.0 in a dedicated virtualenv under
+  * Initial release. SpiderFoot in a dedicated virtualenv under
     /opt/tracelabs/spiderfoot, with hash-pinned dependencies.
+  * Version carries a commit stamp because the shipped tree is NOT the v4.0
+    tag: upstream's declared version is still 4.0, but this is master as of
+    2023-11-05, nineteen months later. Plain "4.0" would claim a release we
+    are not shipping. Same convention as whatsmyname -- see handoff section 8.
   * "Tier C" package, following packages/metagoofil: upstream ships neither
     setup.py nor pyproject.toml, so pip cannot install it as a package. The
     virtualenv holds only the pinned dependencies; the upstream tree is
