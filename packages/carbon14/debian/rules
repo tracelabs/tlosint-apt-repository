@@ -1,0 +1,54 @@
+#!/usr/bin/make -f
+#
+# One venv per tool. Every tlosint python tool gets its own interpreter so one
+# tool's pins can never constrain another's -- ghunt (pillow<11) against
+# maigret (pillow 12) is the concrete case that decision exists for.
+
+export DH_VIRTUALENV_INSTALL_ROOT=/opt/tracelabs
+
+%:
+	dh $@ --with python-virtualenv
+
+# See handoff section 7 for why each of these flags is here. In short:
+#   --install-suffix  otherwise the venv lands in /opt/tracelabs/tlosint-carbon14
+#   --skip-install    this source package is packaging only; carbon14 itself is
+#                     a pinned entry in requirements.txt, so there is no setup.py
+# Hash enforcement lives inside requirements.txt, not in --extra-pip-arg,
+# which would also be applied to the unpinned pip/setuptools/wheel bootstrap.
+override_dh_virtualenv:
+	dh_virtualenv \
+	    --install-suffix carbon14 \
+	    --skip-install \
+	    --python /usr/bin/python3 \
+	    --preinstall pip \
+	    --preinstall setuptools \
+	    --preinstall wheel \
+	    --requirements requirements.txt
+# dh_virtualenv rewrites the build path out of bin/activate and its csh, fish
+# and ps1 siblings, but not out of activate.nu: nushell stores the path in a
+# raw string (r#'...'#) that dh_virtualenv's fixer does not recognise, so the
+# file ships pointing at a build directory that will not exist. Rewrite it
+# ourselves rather than leave a broken activation script in the package.
+	sed -i 's|$(CURDIR)/debian/tlosint-carbon14/opt/tracelabs/carbon14|/opt/tracelabs/carbon14|g' \
+	    debian/tlosint-carbon14/opt/tracelabs/carbon14/bin/activate.nu
+
+# The venv contains prebuilt manylinux wheels (lxml) -- third-party binaries we
+# did not compile. Debian's binary-mangling helpers must not touch them:
+#   dh_dwz       fails outright on their debug info (or absence of it)
+#   dh_strip     would rewrite vendored .so files we do not own
+#   dh_shlibdeps would derive Depends from bundled libs already in the package
+override_dh_dwz:
+
+override_dh_strip:
+	dh_strip --exclude=/opt/tracelabs
+
+override_dh_shlibdeps:
+	dh_shlibdeps -X/opt/tracelabs
+
+# Expose the entry point on PATH. dh_virtualenv rewrites the shebang inside
+# the venv, so this is a plain symlink rather than a wrapper script.
+override_dh_link:
+	dh_link
+	mkdir -p debian/tlosint-carbon14/usr/bin
+	ln -sf /opt/tracelabs/carbon14/bin/carbon14 \
+	    debian/tlosint-carbon14/usr/bin/carbon14

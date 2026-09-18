@@ -1,0 +1,26 @@
+dh_virtualenv installs from PyPI -- and, for whatsmyname itself, from a pinned
+commit archive on GitHub -- during the build, so this package cannot be built
+in sbuild's default offline chroot. build/build-package.sh passes
+--enable-network when this marker is present.
+
+This is a deliberate, narrow exception to Debian's "builds must be offline"
+rule, and it is per-package rather than global so that tlosint-meta and
+tlosint-config keep the stronger guarantee.
+
+What keeps it honest: requirements.txt is fully hash-pinned and carries a
+--require-hashes directive, and that covers the GitHub archive exactly as it
+covers the PyPI wheels -- pip verifies the tarball's sha256 before unpacking
+it. The build can only ever install the exact artifacts we locked. Network
+access cannot change what lands in the package, only whether the build
+succeeds at all. debian/upstream.pin records where the archive URL and its
+hash came from.
+
+The alternative -- vendoring wheels into the source package -- was rejected:
+it would mean committing ~40 MB of binaries to main, which handoff section 8
+forbids, and the wheels would have to be downloaded with the chroot's exact
+interpreter and platform tags rather than the host's.
+
+Separate from the build: whatsmyname also needs network at RUNTIME. It fetches
+the WhatsMyName site list (wmn-data.json) from GitHub on every invocation,
+before it parses its arguments, so even "whatsmyname --help" fails without a
+network. Nothing in this package can change that short of patching upstream.

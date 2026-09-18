@@ -1,0 +1,31 @@
+Source: tlosint-whatsmyname
+Section: net
+Priority: optional
+Maintainer: Trace Labs <jeff.g@tracelabs.org>
+Build-Depends: debhelper-compat (= 13),
+               dh-virtualenv (>= 1.2.2),
+               python3-dev,
+               python3-venv,
+               python3-virtualenv,
+               libffi-dev,
+               libssl-dev,
+               zlib1g-dev
+Standards-Version: 4.7.0
+Homepage: https://github.com/C3n7ral051nt4g3ncy/WhatsMyName-Python
+Rules-Requires-Root: no
+
+Package: tlosint-whatsmyname
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}, python3
+Description: Username enumeration across sites
+ WhatsMyName checks a username against several hundred websites using the
+ WhatsMyName dataset and reports where an account of that name exists,
+ writing HTML, CSV and JSON reports.
+ .
+ The site list is not shipped: the tool downloads wmn-data.json from the
+ upstream WhatsMyName project on every run, before it parses its own
+ arguments. It therefore needs network access even to print --help, and it
+ cannot run at all offline.
+ .
+ Ships a self-contained virtualenv under /opt/tracelabs/whatsmyname so its
+ dependency pins cannot collide with other OSINT tools on the system.

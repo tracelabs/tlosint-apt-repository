@@ -1,0 +1,35 @@
+# Every tag here is a consequence of the venv-per-tool decision, not of this
+# package being wrong. dh_virtualenv ships a whole interpreter environment of
+# prebuilt upstream wheels under /opt, which is precisely what Debian policy
+# assumes a package does not do.
+
+# /opt/tracelabs/<tool> is the deliberate install root -- one venv per tool, so
+# that one tool's pins can never constrain another's. See debian/rules.
+dir-or-file-in-opt
+
+# debian/rules runs dh_shlibdeps -X/opt/tracelabs on purpose: the .so files in
+# the venv are vendored inside this package, so deriving Depends from them
+# would add dependencies for libraries we already ship.
+missing-dependency-on-libc
+
+# debian/rules runs dh_strip --exclude=/opt/tracelabs on purpose: these are
+# third-party manylinux wheels we did not compile and must not rewrite.
+unstripped-binary-or-object
+
+# pip byte-compiles into the venv as it installs. The .pyc files belong to the
+# venv's own interpreter and are never imported by the system python3.
+package-installs-python-pycache-dir
+
+# The console scripts in bin/ are pip's long-shebang form:
+#
+#     #!/bin/sh
+#     '''exec' /opt/tracelabs/whatsmyname/bin/python "$0" "$@"
+#     ' '''
+#
+# pip emits this instead of a plain "#!/path/to/python" when the shebang would
+# exceed the kernel's 127-byte limit, which sbuild's long build path does for
+# this package but not for shorter-named ones. lintian's shell checker parses
+# only the first lines and calls it a syntax error; the file is a valid POSIX
+# sh script that re-execs itself under the venv interpreter, and the path it
+# names is the installed one, so dh_virtualenv's rewriting did work.
+shell-script-fails-syntax-check
