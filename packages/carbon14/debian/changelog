@@ -1,0 +1,6 @@
+tlosint-carbon14 (1.0.0) stable; urgency=medium
+
+  * Initial release. carbon14 1.0.0 in a dedicated virtualenv under
+    /opt/tracelabs/carbon14, with hash-pinned dependencies.
+
+ -- Trace Labs <jeff.g@tracelabs.org>  Thu, 17 Sep 2026 00:00:00 +0000

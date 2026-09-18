@@ -1,0 +1,26 @@
+# Every tag here is a consequence of the venv-per-tool decision, not of this
+# package being wrong. dh_virtualenv ships a whole interpreter environment of
+# prebuilt upstream wheels under /opt, which is precisely what Debian policy
+# assumes a package does not do.
+
+# /opt/tracelabs/<tool> is the deliberate install root -- one venv per tool, so
+# that one tool's pins can never constrain another's. See debian/rules.
+dir-or-file-in-opt
+
+# debian/rules runs dh_shlibdeps -X/opt/tracelabs on purpose: the .so files in
+# the venv are vendored inside this package, so deriving Depends from them
+# would add dependencies for libraries we already ship.
+missing-dependency-on-libc
+
+# debian/rules runs dh_strip --exclude=/opt/tracelabs on purpose: these are
+# third-party manylinux wheels we did not compile and must not rewrite.
+unstripped-binary-or-object
+
+# lxml's wheel statically links libxml2 and zlib. Replacing it with a source
+# build against the system libraries would defeat the hash pinning in
+# requirements.txt, which is what makes this network-enabled build honest.
+embedded-library
+
+# pip byte-compiles into the venv as it installs. The .pyc files belong to the
+# venv's own interpreter and are never imported by the system python3.
+package-installs-python-pycache-dir
