@@ -166,13 +166,22 @@
 
 - name: whatsmyname
   kind: python
-  status: planned
+  status: ready
+  version: 1.3.0+git20260429.0976982
   source: https://github.com/C3n7ral051nt4g3ncy/WhatsMyName-Python
   summary: Username enumeration across sites
+  notes: >
+    Not on PyPI and carries no git tags, so it is pinned by commit archive with
+    a sha256 -- see packages/whatsmyname/debian/upstream.pin.
+    REQUIRES NETWORK TO RUN AT ALL: it downloads wmn-data.json from the upstream
+    project before it parses its own arguments, so even --help fails offline.
+    The site list is never shipped. Relevant to the Qubes template, where an
+    airgapped VM cannot use it.
 
 - name: carbon14
   kind: python
-  status: planned
+  status: ready
+  version: 1.0.0
   source: https://github.com/Lazza/Carbon14
   summary: OSINT dating of web content
 
@@ -188,12 +197,17 @@
 
 - name: metagoofil
   kind: python
-  status: planned
+  status: ready
+  version: 1.4.0
   source: https://github.com/opsdisk/metagoofil
   summary: Extract metadata from public documents
   notes: >
-    Ships neither setup.py nor pyproject.toml, so pip/pipx cannot install it.
-    Needs a hand-written entry point in the venv.
+    Ships neither setup.py nor pyproject.toml, so pip cannot install it. The
+    venv holds dependencies only; the upstream tree is fetched from a pinned
+    commit archive and laid down beside it with a hand-written wrapper. This is
+    the reference "tier C" package -- see packages/metagoofil/debian/upstream.pin.
+    Note: metagoofil.py opens user_agents.txt relative to the CURRENT DIRECTORY,
+    so -u with the shipped list only resolves when run from the install tree.
 
 - name: sn0int
   kind: rust
