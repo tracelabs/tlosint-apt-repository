@@ -1,8 +1,9 @@
 # Build, lint and install-test every package.
 #
-# This workflow NEVER signs. The signing key is not in Actions secrets and must
-# not be: anyone who can land a workflow change could otherwise sign packages
-# that users' systems trust. CI produces unsigned .deb artifacts; a human
+# This workflow NEVER signs or publishes. Neither the signing key nor the R2
+# token is in Actions secrets, and neither may be: anyone who can land a
+# workflow change could otherwise sign packages that users' systems trust, or
+# replace what they download. CI produces unsigned .deb artifacts; a human
 # downloads them and runs publish/publish.sh locally.
 name: build
 

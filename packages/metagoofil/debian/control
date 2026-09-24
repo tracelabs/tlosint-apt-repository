@@ -1,7 +1,7 @@
 Source: tlosint-metagoofil
 Section: net
 Priority: optional
-Maintainer: Trace Labs <jeff.g@tracelabs.org>
+Maintainer: Trace Labs VM Team <vm-team@tracelabs.org>
 # curl and ca-certificates are genuinely build-time dependencies here: unlike
 # every other python tool in this repo, the upstream source is not on PyPI and
 # is fetched over HTTPS by debian/rules (see debian/upstream.pin). They happen

@@ -1,5 +1,5 @@
-# Build output. Never commit binaries to main -- the published tree lives
-# only on gh-pages as a single orphan commit.
+# Build output. Never commit binaries -- the published tree lives only in
+# the R2 bucket. See docs/repo-layout.md
 artifacts/
 *.deb
 *.buildinfo

@@ -3,4 +3,4 @@ tlosint-maigret (0.6.5) stable; urgency=medium
   * Initial release. maigret 0.6.5 in a dedicated virtualenv under
     /opt/tracelabs/maigret, with hash-pinned dependencies.
 
- -- Trace Labs <jeff.g@tracelabs.org>  Wed, 16 Sep 2026 00:00:00 +0000
+ -- Trace Labs VM Team <vm-team@tracelabs.org>  Wed, 16 Sep 2026 00:00:00 +0000

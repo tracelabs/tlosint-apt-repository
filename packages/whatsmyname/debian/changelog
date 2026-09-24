@@ -6,4 +6,4 @@ tlosint-whatsmyname (1.3.0+git20260429.0976982) stable; urgency=medium
     version is derived from pyproject.toml plus the pinned commit -- see
     debian/upstream.pin.
 
- -- Trace Labs <jeff.g@tracelabs.org>  Thu, 17 Sep 2026 00:00:00 +0000
+ -- Trace Labs VM Team <vm-team@tracelabs.org>  Thu, 17 Sep 2026 00:00:00 +0000

@@ -1,7 +1,7 @@
 Source: tlosint-maigret
 Section: net
 Priority: optional
-Maintainer: Trace Labs <jeff.g@tracelabs.org>
+Maintainer: Trace Labs VM Team <vm-team@tracelabs.org>
 Build-Depends: debhelper-compat (= 13),
                dh-virtualenv (>= 1.2.2),
                python3-dev,

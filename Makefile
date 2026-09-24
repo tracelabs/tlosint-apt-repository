@@ -1,7 +1,7 @@
 # tlosint-apt-repository
 #
 # Build and test are safe to run anywhere, including CI.
-# `publish` is LOCAL ONLY -- it touches the signing key. See docs/signing-runbook.md
+# `publish` is LOCAL ONLY -- it signs and uploads to R2. See docs/signing-runbook.md
 
 SHELL      := /bin/bash
 DIST       ?= trixie
@@ -17,7 +17,7 @@ help:
 	@echo "build    - build all packages       (PKG=<name> for one)"
 	@echo "test     - install-test built debs in a clean container"
 	@echo "lint     - shellcheck + lintian"
-	@echo "publish  - LOCAL ONLY. Signs with the OnlyKey."
+	@echo "publish  - LOCAL ONLY. Signs with the local GPG subkey, uploads to R2."
 
 chroot:
 	build/mk-chroot.sh "$(DIST)" "$(ARCH)"

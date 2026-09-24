@@ -8,4 +8,4 @@ tlosint-metagoofil (1.4.0) stable; urgency=medium
     time, verified against the commit SHA and sha256 in debian/upstream.pin,
     and laid down verbatim beside the venv, reached through a wrapper.
 
- -- Trace Labs <jeff.g@tracelabs.org>  Thu, 17 Sep 2026 00:00:00 +0000
+ -- Trace Labs VM Team <vm-team@tracelabs.org>  Thu, 17 Sep 2026 00:00:00 +0000
