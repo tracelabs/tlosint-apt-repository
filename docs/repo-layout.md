@@ -5,6 +5,9 @@ R2 charges nothing for egress, and Cloudflare caches in front of it.
 
 ```
 /
+├── index.html                      usage page (publish/index.html)
+├── tlosint-archive-keyring.gpg     what users install into /etc/apt/keyrings
+├── tlosint-archive-keyring.asc
 ├── pool/main/*.deb
 └── dists/stable/
     ├── Release
@@ -28,7 +31,8 @@ history to prune, and older versions drop off when a new one ships.
    they get `Cache-Control: immutable`, one year.
 2. The plain-path `Packages` and `Contents` indexes, `max-age=60`.
 3. `Release`, `Release.gpg` and `InRelease`, `max-age=60`.
-4. `rclone sync`, which deletes whatever this publish no longer contains.
+4. `index.html` and the keyring files at the root, `max-age=60`.
+5. `rclone sync`, which deletes whatever this publish no longer contains.
 
 `Acquire-By-Hash: yes` is set in `publish/apt-ftparchive.conf`. A client that
 read `InRelease` just before a publish fetches the exact index files it

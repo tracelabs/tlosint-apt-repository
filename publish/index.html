@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>apt.tracelabs.org</title>
+    <style>
+        :root { color-scheme: light dark; }
+        body { font-family: sans-serif; max-width: 52rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+        pre { background: #e8e8e8; padding: 10px; overflow-x: auto; }
+        code { font-family: monospace; }
+        @media (prefers-color-scheme: dark) {
+            body { background: #1b1b1b; color: #ddd; }
+            pre { background: #2c2c2c; }
+            a { color: #8ab4f8; }
+        }
+    </style>
+</head>
+<body>
+<h1>apt.tracelabs.org</h1>
+<p>Signed Debian packages for the <a href="https://github.com/tracelabs/tlosint-vm">Trace Labs OSINT</a> toolset.
+Built for Debian 13 (trixie), amd64.</p>
+
+<h2># 1. Install the signing key</h2>
+<pre>sudo apt install ca-certificates curl
+sudo install -d -m 0755 /etc/apt/keyrings
+sudo curl -fsSL -o /etc/apt/keyrings/tlosint-archive-keyring.gpg https://apt.tracelabs.org/tlosint-archive-keyring.gpg
+gpg --show-keys /etc/apt/keyrings/tlosint-archive-keyring.gpg
+</pre>
+<p>The primary key fingerprint must be:</p>
+<pre>34CE 4BC7 4FC3 BFFE 7AD7  7C2A E7A5 76CA 1ABD 03CD</pre>
+
+<h2># 2. Add the repository</h2>
+<pre>sudo tee /etc/apt/sources.list.d/tlosint.sources &lt;&lt;'EOF'
+Types: deb
+URIs: https://apt.tracelabs.org
+Suites: stable
+Components: main
+Architectures: amd64
+Signed-By: /etc/apt/keyrings/tlosint-archive-keyring.gpg
+EOF
+sudo apt update
+</pre>
+
+<h2># 3. Install packages</h2>
+<p>The whole toolset:</p>
+<pre>sudo apt install tlosint-meta</pre>
+<p>Or individual tools. To see what this repository provides:</p>
+<pre>apt list '?origin(^Trace Labs$)'
+sudo apt install maigret</pre>
+
+[<a href="tlosint-archive-keyring.gpg">tlosint-archive-keyring.gpg</a>]
+[<a href="tlosint-archive-keyring.asc">tlosint-archive-keyring.asc</a>]
+[<a href="https://github.com/tracelabs/tlosint-apt-repository">source</a>]
+</body>
+</html>

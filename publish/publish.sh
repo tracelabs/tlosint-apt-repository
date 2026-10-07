@@ -65,6 +65,10 @@ mkdir -p "$REPO/pool/main" "$REPO/dists/stable/main/binary-amd64" \
          "$REPO/dists/stable/main/binary-all"
 cp "${DEBS[@]}" "$REPO/pool/main/"
 cp "$ROOT/publish/apt-ftparchive.conf" "$REPO/"
+# Landing page and the public keyring live at the root, next to dists/ and
+# pool/. Publishing is stateless, so they go into the tree every time or
+# the final sync deletes them.
+cp "$ROOT/publish/index.html" "$KEYRING" "${KEYRING%.gpg}.asc" "$REPO/"
 
 # Release is written to a temp name: apt-ftparchive hashes everything under
 # dists/stable, and must not find a half-written Release in there.
@@ -137,6 +141,11 @@ echo "==> uploading Release"
 "${RCLONE[@]}" --header-upload "$SHORT" \
     --include "/stable/{Release,Release.gpg,InRelease}" \
     "$REPO/dists" "$R2_DEST/dists"
+
+echo "==> uploading index page and keyring"
+"${RCLONE[@]}" --header-upload "$SHORT" --max-depth 1 \
+    --include "/{index.html,tlosint-archive-keyring.gpg,tlosint-archive-keyring.asc}" \
+    "$REPO" "$R2_DEST"
 
 echo "==> removing files no longer published"
 rclone sync --stats-one-line --stats 0 "$REPO" "$R2_DEST"
