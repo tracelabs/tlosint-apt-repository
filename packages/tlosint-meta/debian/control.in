@@ -10,6 +10,7 @@ Homepage: https://github.com/tracelabs/tlosint-vm
 Package: tlosint-meta
 Architecture: all
 Depends: ${misc:Depends},
+         tlosint-archive-keyring,
 @GENERATED_DEPENDS@
 Description: Trace Labs OSINT toolset (metapackage)
  Installs the curated OSINT tool set used by the Trace Labs OSINT

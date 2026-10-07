@@ -59,6 +59,10 @@ names, not a newer file that sits at the same plain path.
 6. Optional: a Cache Rule on `apt.tracelabs.org` that marks everything as
    eligible for cache and respects the origin's `Cache-Control`. By default
    Cloudflare doesn't cache `.deb` or extensionless files such as `InRelease`.
+7. R2 has no index documents, so `/` returns 404 even though `/index.html`
+   exists. Zone → Rules → URL Rewrite Rule, filter
+   `(http.host eq "apt.tracelabs.org" and http.request.uri.path eq "/")`,
+   rewrite the path to the static value `/index.html`.
 
 ### What the R2 token can and cannot do
 

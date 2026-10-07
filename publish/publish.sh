@@ -151,4 +151,4 @@ echo "==> removing files no longer published"
 rclone sync --stats-one-line --stats 0 "$REPO" "$R2_DEST"
 
 echo "==> done. Verify from a clean container before announcing:"
-echo "    docker run --rm -it debian:trixie-slim"
+echo "    docker run --rm -it --platform linux/amd64 debian:trixie-slim"

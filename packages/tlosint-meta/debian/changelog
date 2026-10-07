@@ -1,3 +1,10 @@
+tlosint-meta (2026.10) stable; urgency=medium
+
+  * Depend on tlosint-archive-keyring, so the archive key can be updated
+    through apt.
+
+ -- Trace Labs VM Team <vm-team@tracelabs.org>  Wed, 07 Oct 2026 00:00:00 +0000
+
 tlosint-meta (2026.09) stable; urgency=medium
 
   * Initial release. Metapackage over the curated OSINT tool set,

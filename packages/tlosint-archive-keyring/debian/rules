@@ -1,0 +1,9 @@
+#!/usr/bin/make -f
+%:
+	dh $@
+
+override_dh_auto_install:
+	# Copied from publish/keys/ by `make keyring`; dpkg-source only tars this
+	# directory, so the key has to live inside it.
+	install -D -m 0644 tlosint-archive-keyring.gpg \
+	    debian/tlosint-archive-keyring/usr/share/keyrings/tlosint-archive-keyring.gpg

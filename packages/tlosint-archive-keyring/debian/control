@@ -1,0 +1,20 @@
+Source: tlosint-archive-keyring
+Section: misc
+Priority: optional
+Maintainer: Trace Labs VM Team <vm-team@tracelabs.org>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://apt.tracelabs.org
+
+Package: tlosint-archive-keyring
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}
+Description: OpenPGP archive key of the Trace Labs OSINT apt repository
+ The repository at apt.tracelabs.org signs its Release files with this key.
+ Installed as /usr/share/keyrings/tlosint-archive-keyring.gpg, for use in
+ the Signed-By field of the repository's apt source.
+ .
+ Shipping the key as a package lets a replacement signing subkey reach
+ users through a normal upgrade, before the old one is retired.

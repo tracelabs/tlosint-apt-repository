@@ -9,11 +9,12 @@ ARCH       ?= amd64
 ARTIFACTS  ?= artifacts
 PACKAGES   := $(notdir $(wildcard packages/*))
 
-.PHONY: help chroot control build test lint clean publish
+.PHONY: help chroot control keyring build test lint clean publish
 
 help:
 	@echo "chroot   - build the sbuild chroot tarball (once, then cached)"
 	@echo "control  - regenerate tlosint-meta/debian/control from tools.yaml"
+	@echo "keyring  - copy publish/keys keyring into tlosint-archive-keyring"
 	@echo "build    - build all packages       (PKG=<name> for one)"
 	@echo "test     - install-test built debs in a clean container"
 	@echo "lint     - shellcheck + lintian"
@@ -27,7 +28,12 @@ control:
 	  --template packages/tlosint-meta/debian/control.in \
 	  --out packages/tlosint-meta/debian/control
 
-build: control
+# publish/keys/ is the source of truth; the package carries a committed copy
+# because dpkg-source only tars packages/<pkg>/.
+keyring:
+	cp publish/keys/tlosint-archive-keyring.gpg packages/tlosint-archive-keyring/
+
+build: control keyring
 ifdef PKG
 	build/build-package.sh "$(PKG)" "$(DIST)" "$(ARCH)"
 else

@@ -86,14 +86,15 @@ the key material in the user's `/etc/apt/keyrings/` file. A subkey issued
 *after* they installed that file is not in it, so `apt update` fails until
 they fetch the new keyring. Keeping the primary offline still pays off: the
 fingerprint users trust doesn't change, and nobody has to re-verify a new
-identity. But the new keyring still has to reach them. The usual fix is a
-`tlosint-archive-keyring` package that ships the keyring file, with the
-replacement subkey added to it *before* the old one is retired. Not built yet.
-See the open questions in handoff.md.
+identity. But the new keyring still has to reach them. The
+`tlosint-archive-keyring` package (pulled in by `tlosint-meta`) ships it as
+`/usr/share/keyrings/tlosint-archive-keyring.gpg`: add the replacement subkey,
+bump the package and publish it *before* the old subkey is retired. This only
+helps users whose `Signed-By` names that path rather than `/etc/apt/keyrings/`.
 
 ## Verification before announcing a release
 
 ```bash
-docker run --rm -it debian:trixie-slim
+docker run --rm -it --platform linux/amd64 debian:trixie-slim
 # install keyring, add sources, apt update -- expect zero warnings
 ```

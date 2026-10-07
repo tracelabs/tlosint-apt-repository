@@ -1,0 +1,6 @@
+tlosint-archive-keyring (2026.10) stable; urgency=medium
+
+  * Initial release. Ships the archive keyring as
+    /usr/share/keyrings/tlosint-archive-keyring.gpg.
+
+ -- Trace Labs VM Team <vm-team@tracelabs.org>  Wed, 07 Oct 2026 00:00:00 +0000

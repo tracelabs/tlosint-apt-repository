@@ -47,8 +47,8 @@ read -r -d '' SMOKE <<'SMOKE_EOF' || true
     # the only place the tool list lives.
     for deb in /debs/*.deb; do
         pkg="$(dpkg-deb -f "$deb" Package)"
-        # Pure-Depends and config packages ship no entry point by design.
-        case "$pkg" in tlosint-meta|tlosint-config) continue ;; esac
+        # Pure-Depends, config and keyring packages ship no entry point by design.
+        case "$pkg" in tlosint-meta|tlosint-config|tlosint-archive-keyring) continue ;; esac
 
         found=0
         while IFS= read -r f; do
