@@ -10,7 +10,7 @@ later be built from.
 > markers and placeholder values. See [`handoff.md`](handoff.md) for full
 > project context and the ordered task list.
 
-## Install (once published)
+## Install
 
 ```bash
 sudo install -m 0644 tlosint-archive-keyring.gpg /etc/apt/keyrings/
