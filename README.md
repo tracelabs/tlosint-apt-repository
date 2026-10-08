@@ -6,9 +6,11 @@ Replaces upstream's `curl | bash` installer with real, versioned, signed
 packages — and provides the package set that a native Qubes OS template will
 later be built from.
 
-> **Status: skeleton.** Nothing is built or published yet. Files contain `TODO`
-> markers and placeholder values. See [`handoff.md`](handoff.md) for full
-> project context and the ordered task list.
+## Root Signing Key
+
+Our signing key fingerprint is: `34CE 4BC7 4FC3 BFFE 7AD7  7C2A E7A5 76CA 1ABD 03CD`
+
+A copy of our keys can be found in this repository [here](/publish/keys/tlosint-archive-keyring.gpg) or at [https://apt.tracelabs.org](https://apt.tracelabs.org/index.html)
 
 ## Install
 
