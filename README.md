@@ -44,6 +44,10 @@ signs. See [`docs/signing-runbook.md`](docs/signing-runbook.md).
 `../tlosint-qube/repo/r4.3` to <https://apt.tracelabs.org/qubes/r4.3>,
 leaving the apt tree untouched. See [`docs/repo-layout.md`](docs/repo-layout.md).
 
+`make qubes-repo-rpm` builds and signs `qubes-repo-tlosint`, the dom0 package
+that adds that repository to `qvm-template`, into `artifacts/qubes/` for
+attaching to a GitHub release.
+
 ## Layout
 
 | Path | Purpose |
@@ -52,6 +56,7 @@ leaving the apt tree untouched. See [`docs/repo-layout.md`](docs/repo-layout.md)
 | `packages/*/debian/` | One source package per tool |
 | `build/` | sbuild wrappers, chroot creation, install tests |
 | `publish/` | Repo metadata config and the signing publish script |
+| `qubes/` | `qvm-template` repo file and the `qubes-repo-tlosint` spec |
 | `scripts/` | `tools.yaml` codegen |
 | `docs/` | Signing runbook, published repo layout |
 

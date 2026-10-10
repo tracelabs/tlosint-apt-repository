@@ -2,6 +2,7 @@
 # the R2 bucket. See docs/repo-layout.md
 artifacts/
 *.deb
+*.rpm
 *.buildinfo
 *.changes
 
