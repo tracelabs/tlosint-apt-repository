@@ -21,7 +21,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Point this at wherever you unpacked them; defaults to ./artifacts.
 ARTIFACTS="${ARTIFACTS:-${ROOT}/artifacts}"
 KEYRING="${ROOT}/publish/keys/tlosint-archive-keyring.gpg"
-R2_DEST="${R2_DEST:-r2:tlosint-apt}"
+R2_DEST="${R2_DEST:-r2:tlosint-tools}"
 WORK="$(mktemp -d)"
 REPO="$WORK/repo"
 trap 'rm -rf "$WORK"' EXIT
@@ -148,7 +148,9 @@ echo "==> uploading index page and keyring"
     "$REPO" "$R2_DEST"
 
 echo "==> removing files no longer published"
-rclone sync --stats-one-line --stats 0 "$REPO" "$R2_DEST"
+# qubes/ is published separately by publish-qubes.sh and is not in $REPO,
+# so it must be excluded or this sync deletes the whole Qubes repository.
+rclone sync --stats-one-line --stats 0 --exclude "/qubes/**" "$REPO" "$R2_DEST"
 
 echo "==> done. Verify from a clean container before announcing:"
 echo "    docker run --rm -it --platform linux/amd64 debian:trixie-slim"

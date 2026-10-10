@@ -9,6 +9,9 @@ R2 charges nothing for egress, and Cloudflare caches in front of it.
 ├── tlosint-archive-keyring.gpg     what users install into /etc/apt/keyrings
 ├── tlosint-archive-keyring.asc
 ├── pool/main/*.deb
+├── qubes/r4.3/                     Qubes template RPM repo (publish/publish-qubes.sh)
+│   ├── *.rpm
+│   └── repodata/{repomd.xml,repomd.xml.asc,*.xml.zst}
 └── dists/stable/
     ├── Release
     ├── Release.gpg                 detached signature
@@ -40,7 +43,7 @@ names, not a newer file that sits at the same plain path.
 
 ## R2 setup (one time)
 
-1. Cloudflare dashboard → R2 → create bucket `tlosint-apt`.
+1. Cloudflare dashboard → R2 → create bucket `tlosint-tools`.
 2. Bucket → Settings → Custom Domains → connect `apt.tracelabs.org`. The
    `tracelabs.org` zone is already on Cloudflare, so the DNS record and the
    certificate are created for you.
@@ -54,7 +57,7 @@ names, not a newer file that sits at the same plain path.
        access_key_id=<id> secret_access_key=<secret> \
        endpoint=https://<account-id>.r2.cloudflarestorage.com acl=private
    ```
-   `publish.sh` uploads to `r2:tlosint-apt` by default. Override it with
+   `publish.sh` uploads to `r2:tlosint-tools` by default. Override it with
    `R2_DEST`.
 6. Optional: a Cache Rule on `apt.tracelabs.org` that marks everything as
    eligible for cache and respects the origin's `Cache-Control`. By default
@@ -72,15 +75,24 @@ the subkey. So a leaked token can take the repository down, but it can't
 get users to install anything. It is still a publishing credential: it lives
 only in the publisher's rclone config and never in Actions secrets.
 
-## Not here: the Qubes template
+## The Qubes template repository
 
-The template RPM (~0.5–1.5 GB) goes on separate hosting with a separate key.
-Options, in order of preference:
+`qubes/<release>/` is a dnf repository for `qvm-template`, built and signed in
+[tlosint-qube](https://github.com/tracelabs/tlosint-qube) and uploaded by
+`make publish-qubes`. It lives in the same bucket but is published
+independently of the apt tree:
 
-1. Cloudflare R2, in a separate bucket on its own subdomain. The setup above
-   carries straight over, and multi-GB objects are fine.
-2. Trace Labs infra (`vm-downloads.tracelabs.org` already serves multi-GB OVAs)
-3. Metadata on R2, payload on GitHub Releases via
-   `createrepo_c --baseurl=https://github.com/ORG/REPO/releases/download/vX/`
-   which writes `xml:base` into the `<location>` elements. Needs testing against
-   `qvm-template` specifically — it shells out to dnf but isn't plain dnf.
+- `publish.sh` excludes `/qubes/**` from its final `rclone sync`, so an apt
+  publish never deletes it.
+- `publish-qubes.sh` only writes or deletes under `qubes/<release>/`, and
+  diffs a listing of everything else in the bucket before and after to prove
+  the live apt repo was not touched.
+- It refuses to upload unless the RPMs and `repomd.xml.asc` verify against
+  `publish/keys/tlosint-archive-keyring.gpg`, and the RPMs on disk match
+  `primary.xml` exactly.
+
+Upload order mirrors the apt side: RPMs, then hash-named `*.xml.zst`
+(immutable), then `repomd.xml{,.asc}` (`max-age=60`), then the pruning sync.
+
+The template RPM is 1-2 GB, above Cloudflare's cacheable size limit on most
+plans, so it is served from R2 directly. Egress is still free.

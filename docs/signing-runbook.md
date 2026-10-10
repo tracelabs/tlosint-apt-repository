@@ -16,8 +16,9 @@ and a new subkey, not a migration of every user's keyring.
 The publishing machine holds **only** the subkey's secret. `gpg -K` there must
 show `sec#` for the primary: the `#` means a stub with no secret material.
 
-The apt key and the future Qubes template key are **different keys**, with
-different blast radii. The template key feeds dom0.
+The same signing subkey signs the apt `Release` and the Qubes template RPMs
+and `repomd.xml`. Note the template is installed from dom0, so this key's
+blast radius includes dom0.
 
 User ID for the apt key: `Trace Labs VM Team <vm-team@tracelabs.org>`.
 

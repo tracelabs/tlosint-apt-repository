@@ -9,7 +9,7 @@ ARCH       ?= amd64
 ARTIFACTS  ?= artifacts
 PACKAGES   := $(notdir $(wildcard packages/*))
 
-.PHONY: help chroot control keyring build test lint clean publish
+.PHONY: help chroot control keyring build test lint clean publish publish-qubes
 
 help:
 	@echo "chroot   - build the sbuild chroot tarball (once, then cached)"
@@ -19,6 +19,7 @@ help:
 	@echo "test     - install-test built debs in a clean container"
 	@echo "lint     - shellcheck + lintian"
 	@echo "publish  - LOCAL ONLY. Signs with the local GPG subkey, uploads to R2."
+	@echo "publish-qubes - LOCAL ONLY. Uploads the signed Qubes RPM repo to /qubes/<release>."
 
 chroot:
 	build/mk-chroot.sh "$(DIST)" "$(ARCH)"
@@ -54,3 +55,8 @@ clean:
 
 publish:
 	publish/publish.sh
+
+# Uploads ../tlosint-qube/repo/<release> to /qubes/<release>. Signs nothing;
+# QUBES_REPO and RELEASE override the source.
+publish-qubes:
+	publish/publish-qubes.sh

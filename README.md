@@ -40,6 +40,10 @@ make test
 `make publish` is **local only** and requires the signing hardware. CI never
 signs. See [`docs/signing-runbook.md`](docs/signing-runbook.md).
 
+`make publish-qubes` uploads the signed Qubes template repo from
+`../tlosint-qube/repo/r4.3` to <https://apt.tracelabs.org/qubes/r4.3>,
+leaving the apt tree untouched. See [`docs/repo-layout.md`](docs/repo-layout.md).
+
 ## Layout
 
 | Path | Purpose |
