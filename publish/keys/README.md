@@ -23,5 +23,3 @@ EOF
 
 Never `apt-key`. It is deprecated and makes the key a trust root for every
 repository on the system.
-
-See `../../docs/signing-runbook.md` for generation and subkey import.

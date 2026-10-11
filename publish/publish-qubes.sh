@@ -11,7 +11,6 @@
 #
 #  It only ever writes or deletes under qubes/<release>/. The apt tree next to
 #  it is live, and a before/after listing proves this publish left it alone.
-#  See docs/repo-layout.md
 #
 set -euo pipefail
 

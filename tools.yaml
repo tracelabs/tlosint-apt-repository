@@ -1,6 +1,6 @@
 # Single source of truth for the OSINT tool set.
 #
-# Generates: tlosint-meta Depends, README table.
+# Generates: tlosint-meta Depends (make control), README table (make readme).
 # Never hardcode the tool list anywhere else.
 #
 # Inventoried 2026-09-16 against tracelabs/tlosint-vm branch u/191-socmint-tools,
@@ -293,7 +293,7 @@
   summary: Twitter/X scraping
   notes: >
     Upstream gates this behind TLOSINT_ENABLE_TWSCRAPE=1 pending a Trace Labs
-    ToS review (docs/TOOLING_POLICY.md). Do not ship by default.
+    ToS review (upstream tlosint-vm docs/TOOLING_POLICY.md). Do not ship by default.
 
 # =============================================================================
 # Browsers and desktop bits live in tlosint-config, not here -- they are

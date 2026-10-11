@@ -3,7 +3,7 @@
 # $releasever is the dom0 Qubes release (e.g. 4.3), so this follows
 # https://apt.tracelabs.org/qubes/r4.3 and moves with in-place upgrades.
 #
-#   qvm-template --enablerepo=tlosint-templates list
+#   qvm-template list --available debian-13-tlosint
 #   qvm-template install debian-13-tlosint
 
 [tlosint-templates]

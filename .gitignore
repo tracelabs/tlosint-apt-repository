@@ -1,5 +1,5 @@
 # Build output. Never commit binaries -- the published tree lives only in
-# the R2 bucket. See docs/repo-layout.md
+# the R2 bucket.
 artifacts/
 *.deb
 *.rpm

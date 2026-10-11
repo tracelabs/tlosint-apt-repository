@@ -12,7 +12,6 @@
 #
 #  Prerequisites: the signing subkey imported into $GNUPGHOME, an rclone
 #  remote for the R2 bucket, and docker (or apt-ftparchive on PATH).
-#  See docs/signing-runbook.md and docs/repo-layout.md
 #
 set -euo pipefail
 
@@ -102,7 +101,7 @@ if ! gpg --batch --with-colons --list-secret-keys "${KEYID}!" 2>/dev/null | awk 
         $1 == "fpr" && $10 == fpr && ok { found = 1 }
         $1 != "fpr" && $1 != "grp" && $1 != "ssb" { ok = 0 }
         END { exit !found }'; then
-    echo "signing subkey $KEYID not usable in $GNUPGHOME -- see docs/signing-runbook.md" >&2
+    echo "signing subkey $KEYID not usable in $GNUPGHOME" >&2
     exit 1
 fi
 

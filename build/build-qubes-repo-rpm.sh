@@ -8,7 +8,7 @@
 #  $ARTIFACTS/qubes/ for attaching to a GitHub release.
 #
 #  Prerequisites: docker, rpmsign, rpmkeys, and the signing subkey in
-#  $GNUPGHOME. See docs/signing-runbook.md
+#  $GNUPGHOME.
 #
 set -euo pipefail
 

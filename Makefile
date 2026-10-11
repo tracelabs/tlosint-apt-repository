@@ -1,7 +1,7 @@
 # tlosint-apt-repository
 #
 # Build and test are safe to run anywhere, including CI.
-# `publish` is LOCAL ONLY -- it signs and uploads to R2. See docs/signing-runbook.md
+# `publish` is LOCAL ONLY -- it signs and uploads to R2.
 
 SHELL      := /bin/bash
 DIST       ?= trixie
@@ -9,11 +9,12 @@ ARCH       ?= amd64
 ARTIFACTS  ?= artifacts
 PACKAGES   := $(notdir $(wildcard packages/*))
 
-.PHONY: help chroot control keyring build test lint clean publish publish-qubes qubes-repo-rpm
+.PHONY: help chroot control readme keyring build test lint clean publish publish-qubes qubes-repo-rpm
 
 help:
 	@echo "chroot   - build the sbuild chroot tarball (once, then cached)"
 	@echo "control  - regenerate tlosint-meta/debian/control from tools.yaml"
+	@echo "readme   - regenerate the README tool table from tools.yaml"
 	@echo "keyring  - copy publish/keys keyring into tlosint-archive-keyring"
 	@echo "build    - build all packages       (PKG=<name> for one)"
 	@echo "test     - install-test built debs in a clean container"
@@ -29,6 +30,9 @@ control:
 	scripts/gen-meta-control.py tools.yaml \
 	  --template packages/tlosint-meta/debian/control.in \
 	  --out packages/tlosint-meta/debian/control
+
+readme:
+	scripts/gen-readme-table.py tools.yaml --readme README.md
 
 # publish/keys/ is the source of truth; the package carries a committed copy
 # because dpkg-source only tars packages/<pkg>/.
