@@ -64,7 +64,7 @@ rpmkeys --dbpath "$db" --checksig qubes-repo-tlosint-*.noarch.rpm   # expect "si
 **In dom0**, copy the package over and install it:
 
 ```bash
-qvm-run --pass-io work 'cat qubes-repo-tlosint-1.0-1.fc41.noarch.rpm' > /tmp/qubes-repo-tlosint.rpm
+qvm-run --pass-io work 'cat qubes-repo-tlosint-1.0-2.fc41.noarch.rpm' > /tmp/qubes-repo-tlosint.rpm
 sudo dnf install /tmp/qubes-repo-tlosint.rpm
 ```
 

@@ -3,7 +3,7 @@
 
 Name:      qubes-repo-tlosint
 Version:   1.0
-Release:   1%{?dist}
+Release:   2%{?dist}
 Summary:   Trace Labs OSINT template repository for qvm-template
 License:   GPL-3.0-or-later
 URL:       https://github.com/tracelabs/tlosint-apt-repository
@@ -27,5 +27,8 @@ install -D -m 0644 %{SOURCE1} %{buildroot}/etc/qubes/repo-templates/keys/tlosint
 /etc/qubes/repo-templates/keys/tlosint.asc
 
 %changelog
+* Sat Oct 10 2026 Trace Labs VM Team <vm-team@tracelabs.org> - 1.0-2
+- Set repo_gpgcheck = 0 in tlosint.repo
+
 * Sat Oct 10 2026 Trace Labs VM Team <vm-team@tracelabs.org> - 1.0-1
 - Initial package: tlosint-templates repo for Qubes R4.3
