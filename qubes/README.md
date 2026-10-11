@@ -95,6 +95,6 @@ qvm-template upgrade debian-13-tlosint
 
 `make qubes-repo-rpm` builds and signs the package into `artifacts/qubes/`.
 Bump `Version` or `Release` and add a `%changelog` entry for every release.
-The template repository itself is built in
-[tlosint-qube](https://github.com/tracelabs/tlosint-qube) and uploaded with
+The template build is defined in
+[qubes-builder-tlosint](https://github.com/tracelabs/qubes-builder-tlosint), built using our custom [qubes-builderv2](https://github.com/tracelabs/qubes-builderv2) and uploaded with
 `make publish-qubes`.
