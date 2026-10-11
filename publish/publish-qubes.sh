@@ -82,7 +82,7 @@ SNAPSHOT=(rclone lsf -R --files-only --format "pst" --exclude "/qubes/**" "$R2_D
 echo
 echo "    from: $SRC"
 echo "    to:   $DEST"
-printf '    %s\n' $RPMS
+while read -r f; do echo "    $f"; done <<<"$RPMS"
 read -r -p "Publish these to $DEST? [y/N] " answer
 [[ "$answer" == [yY] ]] || { echo "aborted"; exit 1; }
 

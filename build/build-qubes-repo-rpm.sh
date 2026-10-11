@@ -54,7 +54,7 @@ echo "==> signing ${RPM##*/}"
 # Explicit key, so a stray ~/.rpmmacros cannot pick a different one. The
 # trailing '!' pins this exact subkey, as in publish/publish.sh.
 export GNUPGHOME="${GNUPGHOME:-$HOME/.gnupg}"
-GPG_TTY="$(tty 2>/dev/null)" && export GPG_TTY || true
+if GPG_TTY="$(tty 2>/dev/null)"; then export GPG_TTY; fi
 rpmsign --addsign \
     --define "_openpgp_sign gpg" \
     --define "_openpgp_sign_id ${KEYID}!" \
