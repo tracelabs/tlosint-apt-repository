@@ -13,6 +13,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: read
+
 env:
   DIST: trixie
   ARCH: amd64
